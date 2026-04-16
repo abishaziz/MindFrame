@@ -117,6 +117,18 @@ class SkillRegistry(private val context: Context) {
                 "Call this if you need the user to provide information, make a choice, or perform an action you cannot do.",
                 mapOf("question" to OllamaProperty("string", "The question or instruction for the user.")),
                 listOf("question")
+            ),
+            createTool(
+                "get_installed_apps",
+                "Returns a list of all user-facing applications installed on the device and their package names.",
+                emptyMap(),
+                emptyList()
+            ),
+            createTool(
+                "started_skill",
+                "Call this as the first action if you are following a known RECIPE. This signals your intent to the system.",
+                mapOf("skill_name" to OllamaProperty("string", "The name of the recipe you are starting.")),
+                listOf("skill_name")
             )
         )
     }
@@ -149,6 +161,8 @@ class SkillRegistry(private val context: Context) {
             "report_success" -> "TASK_COMPLETE: ${args["message"] ?: "Task finished"}"
             "report_error" -> "TASK_ERROR: ${args["reason"] ?: "Unknown error"}"
             "ask_user_question" -> "WAITING_FOR_USER: ${args["question"] ?: "How can I help you?"}"
+            "get_installed_apps" -> executeGetInstalledApps()
+            "started_skill" -> "SKILL_STARTED: ${args["skill_name"] ?: "Unknown"}"
             else -> "Unknown tool: $name"
         }
     }
@@ -166,6 +180,10 @@ class SkillRegistry(private val context: Context) {
 
     fun getLearnedRecipeNames(): List<String> {
         return learnedRecipes.map { it.name }
+    }
+
+    fun getSystemRecipeNames(): List<String> {
+        return systemRecipes.map { it.name }
     }
 
     fun deleteLearnedRecipe(name: String): Boolean {
@@ -209,6 +227,26 @@ class SkillRegistry(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading learned recipes", e)
+        }
+    }
+
+    private fun executeGetInstalledApps(): String {
+        return try {
+            val pm = context.packageManager
+            val mainIntent = Intent(Intent.ACTION_MAIN, null)
+            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+            
+            val apps = pm.queryIntentActivities(mainIntent, 0)
+            if (apps.isEmpty()) return "No launcher apps found."
+
+            val appList = apps.joinToString("\n") { resolveInfo ->
+                val label = resolveInfo.loadLabel(pm).toString()
+                val pkg = resolveInfo.activityInfo.packageName
+                "- $label: $pkg"
+            }
+            "Installed launcher applications:\n$appList"
+        } catch (e: Exception) {
+            "Failed to list apps: ${e.message}"
         }
     }
 

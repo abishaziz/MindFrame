@@ -143,9 +143,12 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             val content = message.content
             val thought = extractThought(content)
 
+            // Fallback for manual tool calls in text
+            val finalToolCall = toolCall ?: extractToolCallFromText(content)
+
             AgentResponse(
                 thought = thought,
-                toolCall = toolCall,
+                toolCall = finalToolCall,
                 rawContent = content
             )
 
@@ -178,6 +181,33 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             }
         } catch (e: Exception) {
             content
+        }
+    }
+
+    /**
+     * Fallback parser for manual tool calls like:
+     * [tool_call: name with arg1="val1" arg2="val2"]
+     */
+    private fun extractToolCallFromText(content: String): ToolCall? {
+        try {
+            val toolRegex = Regex("\\[tool_call:\\s*(\\w+)(?:\\s+with\\s+(.+))?\\s*\\]")
+            val match = toolRegex.find(content) ?: return null
+
+            val name = match.groupValues[1]
+            val argsString = match.groupValues.getOrNull(2) ?: ""
+
+            val argsMap = mutableMapOf<String, String>()
+            val argRegex = Regex("(\\w+)\\s*=\\s*\"([^\"]*)\"")
+            argRegex.findAll(argsString).forEach { argMatch ->
+                val argName = argMatch.groupValues[1]
+                val argValue = argMatch.groupValues[2]
+                argsMap[argName] = argValue
+            }
+
+            return ToolCall(name, argsMap)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse manual tool call from text", e)
+            return null
         }
     }
 }

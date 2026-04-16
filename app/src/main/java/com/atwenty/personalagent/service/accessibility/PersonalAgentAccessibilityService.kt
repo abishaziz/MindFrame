@@ -212,6 +212,15 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
     }
 
     override suspend fun takeScreenshot(): String? {
+        val currentPkg = getCurrentPackage()
+        if (currentPkg != null) {
+            val app = application as? PersonalAgentApp
+            if (app?.settingsRepository?.isPackageBlacklisted(currentPkg) == true) {
+                Log.w(TAG, "takeScreenshot: Private Mode active for $currentPkg. Screenshot blocked.")
+                return null
+            }
+        }
+
         return suspendCancellableCoroutine { continuation ->
             try {
                 takeScreenshot(
@@ -281,7 +290,18 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
             } catch (e: Exception) {
                 null
             }
-            if (root != null) return root
+            if (root != null) {
+                // Privacy Check
+                val pkg = root.packageName?.toString()
+                if (pkg != null) {
+                    val app = application as? PersonalAgentApp
+                    if (app?.settingsRepository?.isPackageBlacklisted(pkg) == true) {
+                        Log.w(TAG, "getRootSafe: Private Mode active for $pkg. Observation blocked.")
+                        return null
+                    }
+                }
+                return root
+            }
             if (attempt < MAX_ROOT_RETRIES - 1) {
                 Thread.sleep(ROOT_RETRY_DELAY_MS)
             }

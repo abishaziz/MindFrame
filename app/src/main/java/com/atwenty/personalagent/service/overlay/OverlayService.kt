@@ -23,6 +23,7 @@ import com.atwenty.personalagent.MainActivity
 import com.atwenty.personalagent.PersonalAgentApp
 import com.atwenty.personalagent.R
 import com.atwenty.personalagent.domain.model.AgentStatus
+import com.atwenty.personalagent.domain.model.SkillType
 import com.atwenty.personalagent.domain.usecase.AgentOrchestrator
 import com.atwenty.personalagent.skills.SkillGenerator
 import com.atwenty.personalagent.ui.settings.SettingsActivity
@@ -233,9 +234,16 @@ class OverlayService : Service() {
                         is AgentStatus.Completed -> {
                             tvStatus.text = "✅ Completed"
                             btnForceStop.visibility = View.GONE
+                            
                             val app = application as PersonalAgentApp
                             if (app.settingsRepository.isDeveloperMode) {
-                                layoutFeedback.visibility = View.VISIBLE
+                                // Only show feedback buttons if it was a NEW skill (fresh reasoning)
+                                // If it was a Learned or System skill, hide them to avoid redundancy.
+                                if (status.skillType == SkillType.NEW) {
+                                    layoutFeedback.visibility = View.VISIBLE
+                                } else {
+                                    layoutFeedback.visibility = View.GONE
+                                }
                             }
                         }
                         is AgentStatus.Error -> {

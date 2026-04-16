@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class AgentOrchestrator(
     private val ollamaProvider: OllamaCloudProvider,
-    private val skillRegistry: SkillRegistry
+    private val skillRegistry: SkillRegistry,
+    private val skillGenerator: com.atwenty.personalagent.skills.SkillGenerator
 ) {
     companion object {
         private const val TAG = "PA_Orchestrator"
@@ -35,6 +36,7 @@ class AgentOrchestrator(
     private var currentJob: Job? = null
     private var conversationHistory = mutableListOf<OllamaMessage>()
     private var currentSessionLog: SessionLog? = null
+    private var currentSkillType: SkillType = SkillType.NEW
 
     // System prompt, loaded once and cached
     private var systemPrompt: String? = null
@@ -85,6 +87,7 @@ class AgentOrchestrator(
 
                 // Initialize session log
                 currentSessionLog = SessionLog(taskDescription = task)
+                currentSkillType = SkillType.NEW // Default to NEW
 
                 // Add user task
                 conversationHistory.add(OllamaMessage(role = "user", content = task))
@@ -122,8 +125,10 @@ class AgentOrchestrator(
                         tools = skillRegistry.getAvailableTools()
                     )
 
-                    Log.d(TAG, "LLM thought: ${response.thought}")
-                    emitChat(ChatMessage.Agent(response.thought))
+                    // Clean the thought if it contains a manual tool call string
+                    val cleanedThought = response.thought.replace(Regex("\\[tool_call:.*?\\]"), "").trim()
+                    Log.d(TAG, "LLM thought: $cleanedThought")
+                    emitChat(ChatMessage.Agent(cleanedThought))
 
                     // Add assistant response to conversation
                     conversationHistory.add(
@@ -153,18 +158,40 @@ class AgentOrchestrator(
 
                         // Handle special tool results
                         when {
-                            toolResult.startsWith("TASK_COMPLETE:") -> {
-                                val summary = toolResult.removePrefix("TASK_COMPLETE:")
-                                _status.value = AgentStatus.Completed(summary)
-                                emitChat(ChatMessage.Agent("✅ $summary"))
-                                currentSessionLog?.wasSuccessful = true
+                             toolResult.startsWith("TASK_COMPLETE:") -> {
+                                 val summary = toolResult.removePrefix("TASK_COMPLETE:")
+                                 
+                                 // Use the skill type tracked via tool calls
+                                 _status.value = AgentStatus.Completed(summary, currentSkillType)
+                                 
+                                 // Emit final feedback message
+                                 val emoji = when(currentSkillType) {
+                                     SkillType.LEARNED -> "✨"
+                                     SkillType.SYSTEM -> "📚"
+                                     SkillType.NEW -> "📝"
+                                 }
+                                 val feedback = when(currentSkillType) {
+                                     SkillType.LEARNED -> "Used a previously learned skill!"
+                                     SkillType.SYSTEM -> "Used a built-in pre-skill!"
+                                     SkillType.NEW -> "Learned a new skill from this task!"
+                                 }
+                                 emitChat(ChatMessage.Agent("$emoji $feedback"))
+                                 emitChat(ChatMessage.Agent("✅ $summary"))
+                                 
+                                 currentSessionLog?.wasSuccessful = true
 
-                                // Log session step
-                                currentSessionLog?.steps?.add(
-                                    SessionStep(step, uiSnapshot, response.thought, response.toolCall, toolResult)
-                                )
-                                return@launch
-                            }
+                                 // Log session step
+                                 currentSessionLog?.steps?.add(
+                                     SessionStep(step, uiSnapshot, response.thought, response.toolCall, toolResult)
+                                 )
+                                 
+                                 // Trigger self-learning if it's a new skill
+                                 if (currentSkillType == SkillType.NEW) {
+                                     currentSessionLog?.let { scope.launch { skillGenerator.generateFromSession(it) } }
+                                 }
+                                 
+                                 return@launch
+                             }
                             toolResult.startsWith("TASK_ERROR:") -> {
                                 val reason = toolResult.removePrefix("TASK_ERROR:")
                                 _status.value = AgentStatus.Error(reason)
@@ -185,6 +212,16 @@ class AgentOrchestrator(
                                 )
                                 continue
                             }
+                             toolResult.startsWith("SKILL_STARTED:") -> {
+                                 val skillName = toolResult.removePrefix("SKILL_STARTED:").trim()
+                                 // Track state based on explicit tool call name
+                                 currentSkillType = when {
+                                     skillRegistry.getLearnedRecipeNames().contains(skillName) -> SkillType.LEARNED
+                                     skillRegistry.getSystemRecipeNames().contains(skillName) -> SkillType.SYSTEM
+                                     else -> SkillType.NEW
+                                 }
+                                 Log.i(TAG, "Explicit Skill Started: $skillName (Type: $currentSkillType)")
+                             }
                         }
 
                         // Add tool result to conversation
@@ -248,10 +285,10 @@ class AgentOrchestrator(
 
     // --- Private Helpers ---
 
-    private fun captureScreen(): String {
+    private suspend fun captureScreen(): String {
         // Hide overlay before capturing
         onHideOverlay?.invoke()
-        Thread.sleep(OVERLAY_HIDE_DELAY_MS)
+        delay(OVERLAY_HIDE_DELAY_MS)
 
         val screenText = driver?.readScreenAsText()
             ?: "[Accessibility service not connected - cannot read screen]"
