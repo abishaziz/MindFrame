@@ -27,6 +27,7 @@ import com.atwenty.personalagent.domain.model.SkillType
 import com.atwenty.personalagent.domain.usecase.AgentOrchestrator
 import com.atwenty.personalagent.skills.SkillGenerator
 import com.atwenty.personalagent.ui.settings.SettingsActivity
+import com.atwenty.personalagent.ui.view.BackAwareEditText
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
@@ -60,12 +61,13 @@ class OverlayService : Service() {
     private lateinit var tvStatus: TextView
     private lateinit var chatContainer: LinearLayout
     private lateinit var scrollChat: ScrollView
-    private lateinit var etInput: EditText
+    private lateinit var etInput: BackAwareEditText
     private lateinit var btnSend: ImageButton
     private lateinit var btnMinimize: ImageButton
     private lateinit var btnSettings: ImageButton
     private lateinit var btnForceStop: View
     private lateinit var layoutFeedback: LinearLayout
+    private lateinit var layoutInput: View
     private lateinit var btnFeedbackSuccess: View
     private lateinit var btnFeedbackFail: View
 
@@ -121,12 +123,14 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = 50
-            y = 200
+            y = 50
         }
 
         // Bind views
@@ -141,6 +145,7 @@ class OverlayService : Service() {
         btnSettings = overlayView.findViewById(R.id.btn_settings)
         btnForceStop = overlayView.findViewById(R.id.btn_force_stop)
         layoutFeedback = overlayView.findViewById(R.id.layout_feedback)
+        layoutInput = overlayView.findViewById(R.id.layout_input)
         btnFeedbackSuccess = overlayView.findViewById(R.id.btn_feedback_success)
         btnFeedbackFail = overlayView.findViewById(R.id.btn_feedback_fail)
 
@@ -155,6 +160,7 @@ class OverlayService : Service() {
 
         // Settings button
         btnSettings.setOnClickListener {
+            collapse()
             val intent = Intent(this, SettingsActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -162,12 +168,38 @@ class OverlayService : Service() {
         }
 
         // Send message
-        btnSend.setOnClickListener { sendUserMessage() }
+        btnSend.setOnClickListener { 
+            sendUserMessage()
+            updateFocus(false) // Release focus after sending
+        }
         etInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) {
                 sendUserMessage()
+                updateFocus(false) // Release focus after sending
                 true
             } else false
+        }
+        
+        // Tap input to grab focus
+        etInput.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                updateFocus(true)
+            }
+            false // allow default processing
+        }
+        
+        // Handle Back button dismissing keyboard
+        etInput.onBackPressedListener = {
+            updateFocus(false)
+        }
+
+        // Handle clicks OUTSIDE the overlay to release focus
+        overlayView.setOnTouchListener { v, event ->
+            // Trigger on any action outside to release focus instantly
+            if (event.action == MotionEvent.ACTION_OUTSIDE) {
+                updateFocus(false)
+            }
+            false
         }
 
         // Force stop
@@ -189,6 +221,7 @@ class OverlayService : Service() {
     private fun setupOrchestatorCallbacks() {
         orchestrator.onHideOverlay = { 
             serviceScope.launch(Dispatchers.Main) { 
+                updateFocus(false) // Release focus BEFORE hiding
                 overlayView.visibility = View.INVISIBLE 
             }
         }
@@ -224,7 +257,7 @@ class OverlayService : Service() {
                             layoutFeedback.visibility = View.GONE
                         }
                         is AgentStatus.Thinking -> {
-                            tvStatus.text = "Thinking... (step ${status.step})"
+                            tvStatus.text = "Thinking..."
                             btnForceStop.visibility = View.VISIBLE
                             layoutFeedback.visibility = View.GONE
                         }
@@ -237,7 +270,7 @@ class OverlayService : Service() {
                             btnForceStop.visibility = View.VISIBLE
                         }
                         is AgentStatus.Completed -> {
-                            tvStatus.text = "✅ Completed"
+                            tvStatus.text = "Task Complete"
                             btnForceStop.visibility = View.GONE
                             
                             val app = application as PersonalAgentApp
@@ -318,7 +351,8 @@ class OverlayService : Service() {
                 }
             }
             layoutParams = lp
-
+            
+            // ... (rest of styling stays same)
             if (isUser) {
                 setBackgroundColor(0xFF6200EE.toInt())
                 setTextColor(0xFFFFFFFF.toInt())
@@ -327,7 +361,6 @@ class OverlayService : Service() {
                 setTextColor(0xFFE0E0E0.toInt())
             }
 
-            // Round corners
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(if (isUser) 0xFF6200EE.toInt() else 0xFF2A2A3A.toInt())
                 cornerRadius = 20f
@@ -335,8 +368,6 @@ class OverlayService : Service() {
         }
 
         chatContainer.addView(bubble)
-
-        // Auto-scroll to bottom
         scrollChat.post { scrollChat.fullScroll(View.FOCUS_DOWN) }
     }
 
@@ -349,9 +380,23 @@ class OverlayService : Service() {
         fabToggle.visibility = View.GONE
         panelExpanded.visibility = View.VISIBLE
 
-        // Make window focusable so keyboard works
-        layoutParams.flags = layoutParams.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
-        windowManager.updateViewLayout(overlayView, layoutParams)
+        // Keep non-focusable by default so back button works for background
+        updateFocus(false)
+    }
+
+    private fun updateFocus(focusable: Boolean) {
+        if (focusable) {
+            layoutParams.flags = layoutParams.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+            windowManager.updateViewLayout(overlayView, layoutParams)
+            etInput.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(etInput, InputMethodManager.SHOW_IMPLICIT)
+        } else {
+            layoutParams.flags = layoutParams.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            windowManager.updateViewLayout(overlayView, layoutParams)
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(etInput.windowToken, 0)
+        }
     }
 
     private fun collapse() {
@@ -359,13 +404,7 @@ class OverlayService : Service() {
         panelExpanded.visibility = View.GONE
         fabToggle.visibility = View.VISIBLE
 
-        // Remove focusable flag
-        layoutParams.flags = layoutParams.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-        windowManager.updateViewLayout(overlayView, layoutParams)
-
-        // Hide keyboard
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(etInput.windowToken, 0)
+        updateFocus(false)
     }
 
     fun showOverlay() {

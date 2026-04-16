@@ -178,6 +178,10 @@ class SkillRegistry(private val context: Context) {
         }
     }
 
+    fun getLearnedRecipes(): List<SkillRecipe> {
+        return learnedRecipes
+    }
+
     fun getLearnedRecipeNames(): List<String> {
         return learnedRecipes.map { it.name }
     }
@@ -186,10 +190,10 @@ class SkillRegistry(private val context: Context) {
         return systemRecipes.map { it.name }
     }
 
-    fun deleteLearnedRecipe(name: String): Boolean {
+    fun deleteLearnedRecipe(fileName: String): Boolean {
         try {
             val dir = File(context.filesDir, LEARNED_SKILLS_DIR)
-            val file = File(dir, "$name.md")
+            val file = File(dir, fileName)
             if (file.exists() && file.delete()) {
                 loadLearnedRecipes()
                 return true
@@ -222,7 +226,9 @@ class SkillRegistry(private val context: Context) {
             if (!dir.exists()) return
             dir.listFiles()?.forEach { file ->
                 if (file.name.endsWith(".md")) {
-                    parseRecipe(file.readText())?.let { learnedRecipes.add(it) }
+                    parseRecipe(file.readText())?.let { 
+                        learnedRecipes.add(it.copy(fileName = file.name)) 
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -360,6 +366,7 @@ class SkillRegistry(private val context: Context) {
         val name: String,
         val description: String,
         val steps: String,
-        val rawContent: String
+        val rawContent: String,
+        val fileName: String? = null
     )
 }

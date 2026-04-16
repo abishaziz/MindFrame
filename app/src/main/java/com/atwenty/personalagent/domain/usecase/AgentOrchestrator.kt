@@ -248,8 +248,9 @@ class AgentOrchestrator(
 
                     } else {
                         // No tool call — LLM is just talking or explaining.
-                        // We must stop the loop here, otherwise it will re-observe the same screen and repeat itself.
-                        _status.value = AgentStatus.WaitingForUser
+                        // We mark this as Completed so the UI clears the "Waiting..." status.
+                        _status.value = AgentStatus.Completed(cleanedThought, currentSkillType)
+                        
                         currentSessionLog?.steps?.add(
                             SessionStep(step, uiSnapshot, response.thought, null, "Conversational response")
                         )

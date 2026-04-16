@@ -18,7 +18,7 @@
     <LinearLayout
         android:id="@+id/panel_expanded"
         android:layout_width="320dp"
-        android:layout_height="450dp"
+        android:layout_height="380dp"
         android:orientation="vertical"
         android:background="@drawable/overlay_bg"
         android:padding="12dp"
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingBottom="8dp">
+            android:paddingBottom="4dp">
 
             <TextView
                 android:id="@+id/tv_title"
@@ -44,18 +44,29 @@
                 android:textStyle="bold" />
 
             <ImageButton
+                android:id="@+id/btn_force_stop"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@android:drawable/ic_delete"
+                android:tint="#D32F2F"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Force Stop"
+                android:visibility="gone"
+                android:layout_marginEnd="8dp" />
+
+            <ImageButton
                 android:id="@+id/btn_settings"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@android:drawable/ic_menu_preferences"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Settings"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="8dp" />
 
             <ImageButton
                 android:id="@+id/btn_minimize"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Minimize" />
@@ -88,16 +99,7 @@
                 android:paddingBottom="4dp" />
         </ScrollView>
 
-        <!-- Force Stop Button (visible during task execution) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_force_stop"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="⏹ Force Stop"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#D32F2F"
-            android:visibility="gone"
-            android:layout_marginTop="4dp" />
+
 
         <!-- Feedback Buttons (Dev Mode, visible after task) -->
         <LinearLayout
@@ -132,13 +134,14 @@
 
         <!-- Input Bar -->
         <LinearLayout
+            android:id="@+id/layout_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_marginTop="4dp">
 
-            <EditText
+            <com.atwenty.personalagent.ui.view.BackAwareEditText
                 android:id="@+id/et_input"
                 android:layout_width="0dp"
                 android:layout_height="44dp"

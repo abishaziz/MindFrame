@@ -85,27 +85,37 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun loadLearnedSkills() {
-        val skillNames = skillRegistry.getLearnedRecipeNames()
+        val learnedSkills = skillRegistry.getLearnedRecipes()
         
         containerSkills.removeAllViews()
         
-        if (skillNames.isEmpty()) {
+        if (learnedSkills.isEmpty()) {
             tvNoSkills.visibility = android.view.View.VISIBLE
             return
         }
         
         tvNoSkills.visibility = android.view.View.GONE
         
-        for (skillName in skillNames) {
+        for (skill in learnedSkills) {
             val view = LayoutInflater.from(this).inflate(R.layout.item_learned_skill, containerSkills, false)
             
-            view.findViewById<TextView>(R.id.tv_skill_name).text = skillName
+            view.findViewById<TextView>(R.id.tv_skill_name).text = skill.name
             
             view.findViewById<android.view.View>(R.id.btn_delete_skill).setOnClickListener {
-                if (skillRegistry.deleteLearnedRecipe(skillName)) {
-                    loadLearnedSkills()
-                    Toast.makeText(this, "Skill deleted", Toast.LENGTH_SHORT).show()
-                }
+                // Show confirmation dialog before deleting
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Delete Skill")
+                    .setMessage("Are you sure you want to delete '${skill.name}'?")
+                    .setPositiveButton("Delete") { _, _ ->
+                        skill.fileName?.let { fileName ->
+                            if (skillRegistry.deleteLearnedRecipe(fileName)) {
+                                loadLearnedSkills()
+                                Toast.makeText(this, "Skill deleted", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
             }
             
             containerSkills.addView(view)
