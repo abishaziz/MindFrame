@@ -198,11 +198,52 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
                 return false
             }
 
-            when (direction.lowercase()) {
-                "down" -> targetNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                "up" -> targetNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
-                "right" -> targetNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                "left" -> targetNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+            val rect = android.graphics.Rect()
+            targetNode.getBoundsInScreen(rect)
+
+            val centerX = rect.centerX().toFloat()
+            val centerY = rect.centerY().toFloat()
+            val width = rect.width()
+            val height = rect.height()
+
+            // Calculate swipe points (using 80% to 20% range for a decent move)
+            return when (direction.lowercase()) {
+                "down" -> {
+                    // To scroll DOWN (see bottom items), swipe UP
+                    performSwipe(
+                        centerX,
+                        rect.bottom - (height * 0.2f),
+                        centerX,
+                        rect.top + (height * 0.2f)
+                    )
+                }
+                "up" -> {
+                    // To scroll UP (see top items), swipe DOWN
+                    performSwipe(
+                        centerX,
+                        rect.top + (height * 0.2f),
+                        centerX,
+                        rect.bottom - (height * 0.2f)
+                    )
+                }
+                "right" -> {
+                    // To scroll RIGHT, swipe LEFT
+                    performSwipe(
+                        rect.right - (width * 0.2f),
+                        centerY,
+                        rect.left + (width * 0.2f),
+                        centerY
+                    )
+                }
+                "left" -> {
+                    // To scroll LEFT, swipe RIGHT
+                    performSwipe(
+                        rect.left + (width * 0.2f),
+                        centerY,
+                        rect.right - (width * 0.2f),
+                        centerY
+                    )
+                }
                 else -> false
             }
         } catch (e: Exception) {
@@ -417,6 +458,24 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
+            .build()
+
+        return dispatchGesture(gesture, null, null)
+    }
+
+    private fun performSwipe(startX: Float, startY: Float, endX: Float, endY: Float): Boolean {
+        Log.d(TAG, "Swiping from ($startX, $startY) to ($endX, $endY)")
+        
+        // Trigger Visual Debug Circles
+        val orchestrator = (applicationContext as? PersonalAgentApp)?.orchestrator
+        orchestrator?.onDebugClick?.invoke(startX, startY)
+        
+        val path = Path().apply {
+            moveTo(startX, startY)
+            lineTo(endX, endY)
+        }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 500))
             .build()
 
         return dispatchGesture(gesture, null, null)
