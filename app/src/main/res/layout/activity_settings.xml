@@ -144,7 +144,7 @@
                     android:hint="Ollama API Key"
                     android:layout_marginStart="12dp"
                     app:hintTextColor="@color/accent_cobalt"
-                    style="@style/Theme.PersonalAgent.TextInput">
+                    style="@style/Theme.MindFrame.TextInput">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_api_key"
@@ -175,7 +175,7 @@
                     android:hint="Base URL"
                     android:layout_marginStart="12dp"
                     app:hintTextColor="@color/accent_cobalt"
-                    style="@style/Theme.PersonalAgent.TextInput">
+                    style="@style/Theme.MindFrame.TextInput">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_base_url"
@@ -205,7 +205,7 @@
                     android:hint="Model Name"
                     android:layout_marginStart="12dp"
                     app:hintTextColor="@color/accent_cobalt"
-                    style="@style/Theme.PersonalAgent.TextInput">
+                    style="@style/Theme.MindFrame.TextInput">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_model_name"

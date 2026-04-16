@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.atwenty.personalagent"
+    namespace = "com.atwenty.mindframe"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.atwenty.personalagent"
+        applicationId = "com.atwenty.mindframe"
         minSdk = 36
         targetSdk = 36
         versionCode = 1

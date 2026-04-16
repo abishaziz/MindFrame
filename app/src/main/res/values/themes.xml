@@ -1,13 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.PersonalAgent" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.MindFrame" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/bg_matte_grey</item>
         <item name="colorPrimary">@color/accent_cobalt</item>
     </style>
 
-    <style name="Theme.PersonalAgent" parent="Base.Theme.PersonalAgent" />
+    <style name="Theme.MindFrame" parent="Base.Theme.MindFrame" />
 
-    <style name="Theme.PersonalAgent.TextInput" parent="Widget.Material3.TextInputLayout.FilledBox">
+    <style name="Theme.MindFrame.TextInput" parent="Widget.Material3.TextInputLayout.FilledBox">
         <item name="boxBackgroundColor">@color/bg_matte_grey</item>
         <item name="boxStrokeColor">@color/accent_cobalt</item>
         <item name="hintTextColor">@color/accent_cobalt</item>

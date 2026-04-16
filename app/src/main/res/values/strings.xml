@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">PersonalAgent</string>
-    <string name="accessibility_service_description">PersonalAgent requires accessibility access to navigate apps and perform tasks on your behalf.</string>
+    <string name="app_name">MindFrame</string>
+    <string name="accessibility_service_description">MindFrame requires accessibility access to navigate apps and perform tasks on your behalf.</string>
 </resources>

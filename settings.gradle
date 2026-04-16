@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PersonalAgent"
+rootProject.name = "MindFrame"
 include ':app'

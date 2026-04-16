@@ -1,6 +1,6 @@
-# PersonalAgent 🤖
+# MindFrame 🤖
 
-PersonalAgent is a powerful Android-based AI assistant designed to navigate and control your device using natural language. It combines the reasoning capabilities of Large Language Models (LLMs) via Ollama with Android's Accessibility Services to "see" and "interact" with the mobile UI.
+MindFrame is a powerful Android-based AI assistant designed to navigate and control your device using natural language. It combines the reasoning capabilities of Large Language Models (LLMs) via Ollama with Android's Accessibility Services to "see" and "interact" with the mobile UI.
 
 ## 🚀 Features
 
