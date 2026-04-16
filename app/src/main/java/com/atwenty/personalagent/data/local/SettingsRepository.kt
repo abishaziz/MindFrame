@@ -60,6 +60,11 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
         set(value) = prefs.edit().putBoolean(KEY_FIRST_LAUNCH, value).apply()
 
+    // --- Theme Mode (0: System, 1: Light, 2: Dark) ---
+    var themeMode: Int
+        get() = prefs.getInt(KEY_THEME_MODE, 0)
+        set(value) = prefs.edit().putInt(KEY_THEME_MODE, value).apply()
+
     // --- Privacy Blacklist ---
     var blacklistedPackages: Set<String>
         get() = prefs.getStringSet(KEY_BLACKLIST, DEFAULT_BLACKLIST) ?: DEFAULT_BLACKLIST
@@ -85,6 +90,7 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_DEVELOPER_MODE = "developer_mode"
         private const val KEY_FIRST_LAUNCH = "first_launch"
         private const val KEY_BLACKLIST = "privacy_blacklist"
+        private const val KEY_THEME_MODE = "theme_mode"
 
         const val DEFAULT_MODEL = "gemma4:31b-cloud"
         const val DEFAULT_BASE_URL = "https://ollama.com"

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Minimalist-Premium Palette (Dark) -->
+    <color name="bg_matte_grey">#121212</color>
+    <color name="surface_grey">#1E1E1E</color>
+    <color name="border_grey">#2C2C2C</color>
+    <color name="accent_cobalt">#3D5AFE</color>
+    <color name="accent_cobalt_dark">#304FFE</color>
+    <color name="text_muted">#808080</color>
+    <color name="text_primary">#FFFFFF</color>
+</resources>

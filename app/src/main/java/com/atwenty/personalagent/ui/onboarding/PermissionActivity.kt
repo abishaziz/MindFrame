@@ -15,6 +15,9 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.activity.enableEdgeToEdge
 import com.atwenty.personalagent.MainActivity
 import com.atwenty.personalagent.R
 import com.atwenty.personalagent.service.accessibility.PersonalAgentAccessibilityService
@@ -47,8 +50,15 @@ class PermissionActivity : AppCompatActivity() {
     ) { refreshAllStatuses() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_permission)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         statusAccessibility = findViewById(R.id.status_accessibility)
         statusOverlay = findViewById(R.id.status_overlay)

@@ -1,6 +1,7 @@
 package com.atwenty.personalagent
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.atwenty.personalagent.data.local.SettingsRepository
 import com.atwenty.personalagent.data.remote.OllamaCloudProvider
 import com.atwenty.personalagent.domain.usecase.AgentOrchestrator
@@ -17,6 +18,13 @@ class PersonalAgentApp : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // Initialize any necessary subsystems here
+        
+        // Apply theme preference immediately
+        val mode = when (settingsRepository.themeMode) {
+            1 -> AppCompatDelegate.MODE_NIGHT_NO     // Light
+            2 -> AppCompatDelegate.MODE_NIGHT_YES    // Dark
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 }

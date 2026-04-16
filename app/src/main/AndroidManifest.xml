@@ -51,6 +51,7 @@
         
         <activity android:name=".ui.onboarding.PermissionActivity" android:exported="false" />
         <activity android:name=".ui.settings.SettingsActivity" android:exported="false" />
+        <activity android:name=".ui.settings.SkillListActivity" android:exported="false" />
         
         <service
             android:name=".service.accessibility.PersonalAgentAccessibilityService"

@@ -182,6 +182,10 @@ class SkillRegistry(private val context: Context) {
         return learnedRecipes
     }
 
+    fun getSystemRecipes(): List<SkillRecipe> {
+        return systemRecipes
+    }
+
     fun getLearnedRecipeNames(): List<String> {
         return learnedRecipes.map { it.name }
     }

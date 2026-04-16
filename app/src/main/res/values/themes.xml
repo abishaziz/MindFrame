@@ -1,15 +1,18 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.PersonalAgent" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowBackground">@color/bg_matte_grey</item>
+        <item name="colorPrimary">@color/accent_cobalt</item>
     </style>
 
     <style name="Theme.PersonalAgent" parent="Base.Theme.PersonalAgent" />
 
-    <style name="Theme.PersonalAgent.TextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="boxStrokeColor">@color/purple_500</item>
-        <item name="hintTextColor">@color/purple_500</item>
-        <item name="android:textColorHint">#808080</item>
+    <style name="Theme.PersonalAgent.TextInput" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/bg_matte_grey</item>
+        <item name="boxStrokeColor">@color/accent_cobalt</item>
+        <item name="hintTextColor">@color/accent_cobalt</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">1dp</item>
     </style>
 </resources>

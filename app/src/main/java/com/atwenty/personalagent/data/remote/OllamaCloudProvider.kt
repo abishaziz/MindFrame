@@ -67,8 +67,14 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
                     }
                     .build()
 
+                Log.d(TAG, ">>> SENDING REQUEST to LLM...")
+                Log.d(TAG, "Request payload: $requestBody")
+
                 val response = client.newCall(httpRequest).execute()
                 val responseBody = response.body?.string() ?: ""
+
+                Log.d(TAG, "### RECEIVED RESPONSE from LLM (Status: ${response.code})")
+                Log.d(TAG, "Response result: $responseBody")
 
                 if (!response.isSuccessful) {
                     if (response.code >= 500) {
