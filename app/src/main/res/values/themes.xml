@@ -6,4 +6,10 @@
     </style>
 
     <style name="Theme.PersonalAgent" parent="Base.Theme.PersonalAgent" />
+
+    <style name="Theme.PersonalAgent.TextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/purple_500</item>
+        <item name="hintTextColor">@color/purple_500</item>
+        <item name="android:textColorHint">#808080</item>
+    </style>
 </resources>
