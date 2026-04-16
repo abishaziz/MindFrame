@@ -107,21 +107,39 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
             Log.w(TAG, "clickNode: node $nodeId not found in current tree")
             return false
         }
+        
         return try {
-            // Try clicking the node directly
-            if (node.isClickable) {
+            // First attempt: Programmatic Click
+            val success = if (node.isClickable) {
                 node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
             } else {
-                // Walk up to find nearest clickable parent
+                // Try parent delegation
+                var found = false
                 var parent = node.parent
                 while (parent != null) {
                     if (parent.isClickable) {
-                        return parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        found = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        if (found) break
                     }
                     parent = parent.parent
                 }
-                // Last resort: tap the center of the node's bounds via gesture
+                found
+            }
+
+            // Fallback: Physical Gesture (Hardware Tap)
+            // If the programmatic click returned false, or even if it returned true 
+            // but the screen didn't react (we'll assume false for now to force the tap).
+            if (!success) {
+                Log.i(TAG, "Programmatic click failed for $nodeId, falling back to Gesture.")
                 tapAtNodeCenter(node)
+            } else {
+                // Even on success, signal the debug circle so user sees the tap
+                val rect = android.graphics.Rect()
+                node.getBoundsInScreen(rect)
+                (applicationContext as? PersonalAgentApp)?.orchestrator?.onDebugClick?.invoke(
+                    rect.centerX().toFloat(), rect.centerY().toFloat()
+                )
+                true
             }
         } catch (e: Exception) {
             Log.e(TAG, "clickNode failed for $nodeId", e)
@@ -390,6 +408,11 @@ class PersonalAgentAccessibilityService : AccessibilityService(), AccessibilityD
         node.getBoundsInScreen(rect)
         val x = rect.centerX().toFloat()
         val y = rect.centerY().toFloat()
+
+        Log.d(TAG, "Tapping at ($x, $y)")
+        
+        // Trigger Visual Debug Circle
+        (applicationContext as? PersonalAgentApp)?.orchestrator?.onDebugClick?.invoke(x, y)
 
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()

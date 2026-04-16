@@ -46,6 +46,7 @@ class AgentOrchestrator(
     var onShowOverlay: (() -> Unit)? = null
     // Reference to ask-user callback
     var onAskUser: ((String) -> CompletableDeferred<String>)? = null
+    var onDebugClick: ((Float, Float) -> Unit)? = null
 
     private val driver: AccessibilityDriver?
         get() = PersonalAgentAccessibilityService.instance
@@ -148,11 +149,18 @@ class AgentOrchestrator(
                             return@launch
                         }
 
+                        // Hide overlay before action to prevent blocking
+                        onHideOverlay?.invoke()
+                        delay(200) // Give WindowManager time to hide
+
                         val toolResult = skillRegistry.executeTool(
                             response.toolCall.name,
                             response.toolCall.arguments,
                             currentDriver
                         )
+
+                        // Show overlay after action
+                        onShowOverlay?.invoke()
 
                         Log.d(TAG, "Tool result: $toolResult")
 

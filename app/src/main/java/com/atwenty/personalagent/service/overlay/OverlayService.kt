@@ -206,6 +206,11 @@ class OverlayService : Service() {
             }
             deferred
         }
+        orchestrator.onDebugClick = { x, y ->
+            serviceScope.launch(Dispatchers.Main) {
+                showDebugCircle(x, y)
+            }
+        }
     }
 
     private fun observeStatus() {
@@ -363,12 +368,43 @@ class OverlayService : Service() {
         imm.hideSoftInputFromWindow(etInput.windowToken, 0)
     }
 
-    fun hideOverlay() {
-        overlayView.visibility = View.INVISIBLE
-    }
-
     fun showOverlay() {
         overlayView.visibility = View.VISIBLE
+    }
+
+    private fun showDebugCircle(x: Float, y: Float) {
+        val circleView = View(themeContext ?: this).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(0xFFFF0000.toInt()) // Solid Red
+                setStroke(4, 0xFFFFFFFF.toInt()) // White outline
+            }
+        }
+
+        val size = 60
+        val lp = WindowManager.LayoutParams(
+            size, size,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            this.x = x.toInt() - (size / 2)
+            this.y = y.toInt() - (size / 2)
+        }
+
+        try {
+            windowManager.addView(circleView, lp)
+            // Remove after a short delay
+            serviceScope.launch {
+                delay(1500)
+                try {
+                    windowManager.removeView(circleView)
+                } catch (e: Exception) {}
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to show debug circle", e)
+        }
     }
 
     private fun handleFeedback(success: Boolean) {
