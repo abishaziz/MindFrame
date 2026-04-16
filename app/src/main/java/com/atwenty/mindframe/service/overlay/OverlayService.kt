@@ -70,10 +70,7 @@ class OverlayService : Service() {
     private lateinit var btnMinimize: ImageButton
     private lateinit var btnSettings: ImageButton
     private lateinit var btnForceStop: View
-    private lateinit var layoutFeedback: LinearLayout
-    private lateinit var layoutInput: View
-    private lateinit var btnFeedbackSuccess: View
-    private lateinit var btnFeedbackFail: View
+    private lateinit var btnSaveSkill: View
     
     private var currentThoughtView: LinearLayout? = null
     private var currentThoughtText: StringBuilder = StringBuilder()
@@ -138,6 +135,9 @@ class OverlayService : Service() {
             gravity = Gravity.TOP or Gravity.START
             x = 50
             y = 50
+            // Apply background blur (minSdk 36 guarantees native support)
+            flags = flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+            blurBehindRadius = (25 * resources.displayMetrics.density).toInt()
         }
 
         // Bind views
@@ -151,10 +151,7 @@ class OverlayService : Service() {
         btnMinimize = overlayView.findViewById(R.id.btn_minimize)
         btnSettings = overlayView.findViewById(R.id.btn_settings)
         btnForceStop = overlayView.findViewById(R.id.btn_force_stop)
-        layoutFeedback = overlayView.findViewById(R.id.layout_feedback)
-        layoutInput = overlayView.findViewById(R.id.layout_input)
-        btnFeedbackSuccess = overlayView.findViewById(R.id.btn_feedback_success)
-        btnFeedbackFail = overlayView.findViewById(R.id.btn_feedback_fail)
+        btnSaveSkill = overlayView.findViewById(R.id.btn_save_skill)
 
         // FAB tap to expand
         fabToggle.setOnClickListener { toggleExpand() }
@@ -214,12 +211,9 @@ class OverlayService : Service() {
             orchestrator.forceStop()
         }
 
-        // Feedback buttons (Dev Mode)
-        btnFeedbackSuccess.setOnClickListener {
+        // Save Skill button
+        btnSaveSkill.setOnClickListener {
             handleFeedback(true)
-        }
-        btnFeedbackFail.setOnClickListener {
-            handleFeedback(false)
         }
 
         windowManager.addView(overlayView, layoutParams)
@@ -261,12 +255,12 @@ class OverlayService : Service() {
                         is AgentStatus.Idle -> {
                             tvStatus.text = "Ready"
                             btnForceStop.visibility = View.GONE
-                            layoutFeedback.visibility = View.GONE
+                            btnSaveSkill.visibility = View.GONE
                         }
                         is AgentStatus.Thinking -> {
                             tvStatus.text = "Thinking..."
                             btnForceStop.visibility = View.VISIBLE
-                            layoutFeedback.visibility = View.GONE
+                            btnSaveSkill.visibility = View.GONE
                         }
                         is AgentStatus.Acting -> {
                             tvStatus.text = "Acting: ${status.action}"
@@ -282,12 +276,11 @@ class OverlayService : Service() {
                             
                             val app = application as MindFrameApp
                             if (app.settingsRepository.isDeveloperMode) {
-                                // Only show feedback buttons if it was a NEW skill (fresh reasoning)
-                                // If it was a Learned or System skill, hide them to avoid redundancy.
+                                // Only show save button if it was a NEW skill (fresh reasoning)
                                 if (status.skillType == SkillType.NEW) {
-                                    layoutFeedback.visibility = View.VISIBLE
+                                    btnSaveSkill.visibility = View.VISIBLE
                                 } else {
-                                    layoutFeedback.visibility = View.GONE
+                                    btnSaveSkill.visibility = View.GONE
                                 }
                             }
                         }
@@ -377,9 +370,9 @@ class OverlayService : Service() {
                 setTextColor(0xFFE0E0E0.toInt())
             }
 
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(if (isUser) 0xFF6200EE.toInt() else 0xFF2A2A3A.toInt())
-                cornerRadius = 20f
+            background = GradientDrawable().apply {
+                setColor(if (isUser) 0xFF3D5AFE.toInt() else 0xFF2A2A3A.toInt()) // Standardize cobalt
+                cornerRadius = 16f * resources.displayMetrics.density // 16dp Rule
             }
         }
 
@@ -392,20 +385,21 @@ class OverlayService : Service() {
             // Create new thought block
             val container = LinearLayout(themeContext ?: this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(16, 8, 16, 8)
+                setPadding(20, 12, 20, 12) // Increased Padding
                 val lp = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    topMargin = 8
-                    bottomMargin = 8
-                    marginStart = 24
-                    marginEnd = 24
+                    topMargin = 12
+                    bottomMargin = 12
+                    marginStart = 32
+                    marginEnd = 32
                 }
                 layoutParams = lp
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    setColor(getThemedColor(if (isDarkMode()) R.color.thought_bg else R.color.thought_bg)) // Use semantic color
-                    cornerRadius = 12f
+                background = GradientDrawable().apply {
+                    setColor(0xFF333333.toInt()) // Lighter Neutral Grey
+                    cornerRadius = 16f * resources.displayMetrics.density
+                    setStroke((1f * resources.displayMetrics.density).toInt(), 0xFF444444.toInt())
                 }
             }
 
@@ -417,7 +411,7 @@ class OverlayService : Service() {
                 val label = TextView(context).apply {
                     this.text = "Thinking..."
                     textSize = 11f
-                    setTextColor(getThemedColor(R.color.thought_text))
+                    setTextColor(0xFFB0B0B0.toInt()) // Fixed Muted Grey
                     setTypeface(null, android.graphics.Typeface.BOLD)
                 }
                 addView(label)
@@ -574,7 +568,7 @@ class OverlayService : Service() {
     }
 
     private fun handleFeedback(success: Boolean) {
-        layoutFeedback.visibility = View.GONE
+        btnSaveSkill.visibility = View.GONE
         val sessionLog = orchestrator.getSessionLog() ?: return
 
         if (success) {

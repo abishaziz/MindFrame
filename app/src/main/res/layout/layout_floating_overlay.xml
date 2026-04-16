@@ -20,7 +20,7 @@
         android:layout_height="380dp"
         android:orientation="vertical"
         android:background="@drawable/overlay_bg"
-        android:padding="12dp"
+        android:padding="20dp"
         android:visibility="gone"
         android:elevation="8dp">
 
@@ -40,33 +40,32 @@
                 android:text="MindFrame"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <ImageButton
                 android:id="@+id/btn_force_stop"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:src="@android:drawable/ic_delete"
-                android:tint="#D32F2F"
+                android:src="@drawable/ic_stop_premium"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Force Stop"
                 android:visibility="gone"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="12dp" />
 
             <ImageButton
                 android:id="@+id/btn_settings"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:src="@android:drawable/ic_menu_preferences"
+                android:src="@drawable/ic_settings_gear"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Settings"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="12dp" />
 
             <ImageButton
                 android:id="@+id/btn_minimize"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:src="@drawable/ic_close_premium"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Minimize" />
         </LinearLayout>
@@ -100,70 +99,61 @@
 
 
 
-        <!-- Feedback Buttons (Dev Mode, visible after task) -->
-        <LinearLayout
-            android:id="@+id/layout_feedback"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
+        <!-- Save Skill Button (Visible after NEW task completes) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_skill"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="Save Skill"
+            android:textSize="11sp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:textAllCaps="false"
+            android:backgroundTint="@color/accent_approve"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="16dp"
             android:visibility="gone"
-            android:gravity="center"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_feedback_success"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="✅ Worked"
-                android:backgroundTint="#388E3C"
-                android:textColor="#FFFFFF"
-                android:layout_marginEnd="4dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_feedback_fail"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="❌ Failed"
-                android:backgroundTint="#D32F2F"
-                android:textColor="#FFFFFF"
-                android:layout_marginStart="4dp" />
-        </LinearLayout>
-
-        <!-- Input Bar -->
+        <!-- Input Bar (The 'Footer') -->
         <LinearLayout
             android:id="@+id/layout_input"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
+            android:background="@drawable/bg_matte_pill"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp">
 
             <com.atwenty.mindframe.ui.view.BackAwareEditText
                 android:id="@+id/et_input"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:hint="Ask me anything..."
-                android:textColorHint="#808080"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:background="@drawable/input_bg"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:textColorHint="#AAAAAA"
+                android:textColor="#F5F5F5"
+                android:textSize="15sp"
+                android:background="@null"
                 android:singleLine="true"
                 android:imeOptions="actionSend"
                 android:importantForAutofill="no" />
 
             <ImageButton
                 android:id="@+id/btn_send"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:src="@android:drawable/ic_menu_send"
-                android:background="@drawable/send_btn_bg"
-                android:contentDescription="Send"
-                android:layout_marginStart="8dp" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Send" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>
