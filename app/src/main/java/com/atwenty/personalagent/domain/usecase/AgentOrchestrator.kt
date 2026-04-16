@@ -129,7 +129,7 @@ class AgentOrchestrator(
                     // Clean the thought if it contains a manual tool call string
                     val cleanedThought = response.thought.replace(Regex("\\[tool_call:.*?\\]"), "").trim()
                     Log.d(TAG, "LLM thought: $cleanedThought")
-                    emitChat(ChatMessage.Agent(cleanedThought))
+                    emitChat(ChatMessage.Thought(cleanedThought))
 
                     // Add assistant response to conversation
                     conversationHistory.add(
@@ -330,6 +330,7 @@ class AgentOrchestrator(
 
     sealed class ChatMessage {
         data class User(val text: String) : ChatMessage()
+        data class Thought(val text: String) : ChatMessage()
         data class Agent(val text: String) : ChatMessage()
     }
 }

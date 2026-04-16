@@ -8,4 +8,6 @@
     <color name="accent_cobalt_dark">#304FFE</color>
     <color name="text_muted">#808080</color>
     <color name="text_primary">#FFFFFF</color>
+    <color name="thought_bg">#1E1E2C</color>
+    <color name="thought_text">#B0B0B0</color>
 </resources>
