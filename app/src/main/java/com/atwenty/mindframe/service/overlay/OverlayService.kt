@@ -18,9 +18,6 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import android.transition.TransitionManager
-import android.graphics.Typeface
-import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import androidx.core.app.NotificationCompat
 import com.atwenty.mindframe.MainActivity
@@ -71,9 +68,6 @@ class OverlayService : Service() {
     private lateinit var btnSettings: ImageButton
     private lateinit var btnForceStop: View
     private lateinit var btnSaveSkill: View
-    
-    private var currentThoughtView: LinearLayout? = null
-    private var currentThoughtText: StringBuilder = StringBuilder()
 
     private var isExpanded = false
     private var userResponseDeferred: CompletableDeferred<String>? = null
@@ -304,14 +298,10 @@ class OverlayService : Service() {
                 withContext(Dispatchers.Main) {
                     when (message) {
                         is AgentOrchestrator.ChatMessage.User -> {
-                            collapseCurrentThought() // Collapse thinking when user asks something new
-                            currentThoughtView = null
-                            currentThoughtText.setLength(0)
                             addChatBubble(message.text, isUser = true)
                         }
-                        is AgentOrchestrator.ChatMessage.Thought -> addThoughtBubble(message.text)
+                        is AgentOrchestrator.ChatMessage.Thought -> addChatBubble(message.text, isUser = false)
                         is AgentOrchestrator.ChatMessage.Agent -> {
-                            collapseCurrentThought()
                             addChatBubble(message.text, isUser = false)
                         }
                     }
@@ -380,108 +370,7 @@ class OverlayService : Service() {
         scrollChat.post { scrollChat.fullScroll(View.FOCUS_DOWN) }
     }
 
-    private fun addThoughtBubble(text: String) {
-        if (currentThoughtView == null) {
-            // Create new thought block
-            val container = LinearLayout(themeContext ?: this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(20, 12, 20, 12) // Increased Padding
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 12
-                    bottomMargin = 12
-                    marginStart = 32
-                    marginEnd = 32
-                }
-                layoutParams = lp
-                background = GradientDrawable().apply {
-                    setColor(0xFF333333.toInt()) // Lighter Neutral Grey
-                    cornerRadius = 16f * resources.displayMetrics.density
-                    setStroke((1f * resources.displayMetrics.density).toInt(), 0xFF444444.toInt())
-                }
-            }
 
-            val header = LinearLayout(themeContext ?: this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(8, 4, 8, 4)
-                
-                val label = TextView(context).apply {
-                    this.text = "Thinking..."
-                    textSize = 11f
-                    setTextColor(0xFFB0B0B0.toInt()) // Fixed Muted Grey
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                }
-                addView(label)
-                
-                val arrow = ImageView(context).apply {
-                    setImageResource(android.R.drawable.arrow_down_float)
-                    val lpArrow = LinearLayout.LayoutParams(24, 24)
-                    layoutParams = lpArrow
-                    imageTintList = android.content.res.ColorStateList.valueOf(getThemedColor(R.color.thought_text))
-                }
-                addView(arrow)
-                
-                setOnClickListener {
-                    toggleThoughtExpansion(container)
-                }
-            }
-            container.addView(header)
-
-            val thoughtTv = TextView(themeContext ?: this).apply {
-                id = R.id.tv_status + 100 // Temporary ID for finding
-                this.text = text
-                textSize = 12f
-                setTextColor(getThemedColor(R.color.thought_text))
-                setPadding(8, 0, 8, 8)
-                visibility = View.VISIBLE
-            }
-            container.addView(thoughtTv)
-
-            chatContainer.addView(container)
-            currentThoughtView = container
-            currentThoughtText.clear()
-            currentThoughtText.append(text)
-        } else {
-            // Update existing thought block
-            currentThoughtText.append("\n").append(text)
-            val thoughtTv = currentThoughtView?.getChildAt(1) as? TextView
-            thoughtTv?.text = currentThoughtText.toString()
-        }
-        
-        scrollChat.post { scrollChat.fullScroll(View.FOCUS_DOWN) }
-    }
-
-    private fun toggleThoughtExpansion(container: LinearLayout) {
-        val thoughtTv = container.getChildAt(1) as? TextView ?: return
-        val arrow = (container.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? ImageView
-        
-        val isExpanding = thoughtTv.visibility == View.GONE
-        
-        android.transition.TransitionManager.beginDelayedTransition(chatContainer)
-        thoughtTv.visibility = if (isExpanding) View.VISIBLE else View.GONE
-        arrow?.rotation = if (isExpanding) 0f else -90f
-    }
-
-    private fun collapseCurrentThought() {
-        val view = currentThoughtView ?: return
-        val thoughtTv = view.getChildAt(1) as? TextView ?: return
-        val arrow = (view.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? ImageView
-        
-        if (thoughtTv.visibility == View.VISIBLE) {
-            android.transition.TransitionManager.beginDelayedTransition(chatContainer)
-            thoughtTv.visibility = View.GONE
-            arrow?.rotation = -90f
-        }
-        
-        // Reset for next session if needed, but for now we just keep it as "the last thought"
-        // If a new Thought arrives, currentThoughtView being NOT NULL will append to it.
-        // If we want a fresh block for the NEXT user request, we should null it here
-        // But since AgentOrchestrator emits thoughts in a loop, we keep it during the loop.
-        // User requesting something new (ChatMessage.User) will null it.
-    }
 
     private fun isDarkMode(): Boolean {
         return (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == 

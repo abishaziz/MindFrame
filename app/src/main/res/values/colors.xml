@@ -12,7 +12,5 @@
     <color name="accent_approve">#388E3C</color>
     <color name="accent_cobalt_dark">#304FFE</color>
     <color name="text_muted">#707075</color>
-    <color name="thought_bg">#F0F0F2</color>
-    <color name="thought_text">#707075</color>
     <color name="text_primary">#1C1C1E</color>
 </resources>
