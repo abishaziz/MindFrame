@@ -65,6 +65,7 @@ class OverlayService : Service() {
     private lateinit var etInput: BackAwareEditText
     private lateinit var btnSend: ImageButton
     private lateinit var btnMinimize: ImageButton
+    private lateinit var btnCloseService: ImageButton
     private lateinit var btnSettings: ImageButton
     private lateinit var btnForceStop: View
     private lateinit var btnSaveSkill: View
@@ -98,6 +99,7 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        expand() // Always open full panel when launched from app icon
         return START_STICKY
     }
 
@@ -143,6 +145,7 @@ class OverlayService : Service() {
         etInput = overlayView.findViewById(R.id.et_input)
         btnSend = overlayView.findViewById(R.id.btn_send)
         btnMinimize = overlayView.findViewById(R.id.btn_minimize)
+        btnCloseService = overlayView.findViewById(R.id.btn_close_service)
         btnSettings = overlayView.findViewById(R.id.btn_settings)
         btnForceStop = overlayView.findViewById(R.id.btn_force_stop)
         btnSaveSkill = overlayView.findViewById(R.id.btn_save_skill)
@@ -153,8 +156,14 @@ class OverlayService : Service() {
         // Make FAB draggable
         fabToggle.setOnTouchListener(createDragTouchListener())
 
-        // Minimize button
+        // Minimize button (collapse to FAB)
         btnMinimize.setOnClickListener { collapse() }
+
+        // Close Service button (Exit completely)
+        btnCloseService.setOnClickListener { 
+            orchestrator.forceStop(closeApp = true) // Stop any running task first
+            stopSelf() 
+        }
 
         // Settings button
         btnSettings.setOnClickListener {
@@ -202,7 +211,7 @@ class OverlayService : Service() {
 
         // Force stop
         btnForceStop.setOnClickListener {
-            orchestrator.forceStop()
+            orchestrator.forceStop(closeApp = false)
         }
 
         // Save Skill button

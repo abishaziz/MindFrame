@@ -278,11 +278,13 @@ class AgentOrchestrator(
     /**
      * Force stop the current task.
      */
-    fun forceStop() {
+    fun forceStop(closeApp: Boolean) {
         currentJob?.cancel()
         currentJob = null
         _status.value = AgentStatus.Idle
-        emitChat(ChatMessage.Agent("🛑 Task force stopped"))
+        if (!closeApp) {
+            emitChat(ChatMessage.Agent("🛑 Task force stopped"))
+        }
         Log.i(TAG, "Task force stopped")
     }
 
