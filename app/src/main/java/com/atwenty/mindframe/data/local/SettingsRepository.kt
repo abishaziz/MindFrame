@@ -55,6 +55,11 @@ class SettingsRepository(private val context: Context) {
         get() = prefs.getBoolean(KEY_DEVELOPER_MODE, false)
         set(value) = prefs.edit().putBoolean(KEY_DEVELOPER_MODE, value).apply()
 
+    // --- Memory Awareness (Multi-Turn) ---
+    var isMemoryAware: Boolean
+        get() = prefs.getBoolean(KEY_MEMORY_AWARE, true) // Default to true
+        set(value) = prefs.edit().putBoolean(KEY_MEMORY_AWARE, value).apply()
+
     // --- First Launch ---
     var isFirstLaunch: Boolean
         get() = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
@@ -88,6 +93,7 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_BASE_URL = "ollama_base_url"
         private const val KEY_NOTIFICATION_READING = "notification_reading"
         private const val KEY_DEVELOPER_MODE = "developer_mode"
+        private const val KEY_MEMORY_AWARE = "memory_aware"
         private const val KEY_FIRST_LAUNCH = "first_launch"
         private const val KEY_BLACKLIST = "privacy_blacklist"
         private const val KEY_THEME_MODE = "theme_mode"

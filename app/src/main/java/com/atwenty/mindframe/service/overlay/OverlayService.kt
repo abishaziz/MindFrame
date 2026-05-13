@@ -66,6 +66,7 @@ class OverlayService : Service() {
     private lateinit var btnSend: ImageButton
     private lateinit var btnMinimize: ImageButton
     private lateinit var btnCloseService: ImageButton
+    private lateinit var btnNewSession: ImageButton
     private lateinit var btnSettings: ImageButton
     private lateinit var btnForceStop: View
     private lateinit var btnSaveSkill: View
@@ -87,6 +88,7 @@ class OverlayService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         orchestrator = (application as MindFrameApp).orchestrator
         orchestrator.loadSystemPrompt(this)
+        orchestrator.startNewSession() // Fresh launch = new session
 
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -95,10 +97,11 @@ class OverlayService : Service() {
         observeStatus()
         observeChat()
 
-        Log.i(TAG, "Overlay service started")
+        Log.i(TAG, "Overlay service started — new session created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.i(TAG, "onStartCommand — resuming existing session")
         expand() // Always open full panel when launched from app icon
         return START_STICKY
     }
@@ -146,6 +149,7 @@ class OverlayService : Service() {
         btnSend = overlayView.findViewById(R.id.btn_send)
         btnMinimize = overlayView.findViewById(R.id.btn_minimize)
         btnCloseService = overlayView.findViewById(R.id.btn_close_service)
+        btnNewSession = overlayView.findViewById(R.id.btn_new_session)
         btnSettings = overlayView.findViewById(R.id.btn_settings)
         btnForceStop = overlayView.findViewById(R.id.btn_force_stop)
         btnSaveSkill = overlayView.findViewById(R.id.btn_save_skill)
@@ -161,8 +165,15 @@ class OverlayService : Service() {
 
         // Close Service button (Exit completely)
         btnCloseService.setOnClickListener { 
-            orchestrator.forceStop(closeApp = true) // Stop any running task first
+            orchestrator.forceStop(showStopMessage = true) // Stop any running task first
+            orchestrator.clearConversation() // End the session
             stopSelf() 
+        }
+
+        // New Session button
+        btnNewSession.setOnClickListener {
+            orchestrator.startNewSession()
+            clearChatUI()
         }
 
         // Settings button
@@ -211,7 +222,7 @@ class OverlayService : Service() {
 
         // Force stop
         btnForceStop.setOnClickListener {
-            orchestrator.forceStop(closeApp = false)
+            orchestrator.forceStop(showStopMessage = false)
         }
 
         // Save Skill button
@@ -336,6 +347,12 @@ class OverlayService : Service() {
 
         // Otherwise, start a new task
         orchestrator.executeTask(text, serviceScope)
+    }
+
+    private fun clearChatUI() {
+        serviceScope.launch(Dispatchers.Main) {
+            chatContainer.removeAllViews()
+        }
     }
 
     private fun addChatBubble(text: String, isUser: Boolean) {
