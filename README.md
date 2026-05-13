@@ -4,7 +4,10 @@ MindFrame is a powerful Android-based AI assistant designed to navigate and cont
 
 ## 🚀 Features
 
-- **Multi-Turn Sessions**: The agent maintains a continuous conversation history. It remembers previous tasks and screen states within a session, allowing for complex, multi-step dialogue.
+- **Multi-Turn Sessions**: The agent maintains a continuous conversation history. It remembers previous tasks and screen states within a session, allowing for complex, multi-step dialogue. 
+- **Memory Management**: Includes a **"Memory Aware"** toggle in settings to control context persistence:
+    - **ON**: Continuous memory across multiple tasks (default).
+    - **OFF**: Fresh LLM context for every new task while preserving the UI chat log.
 - **Reasoning-Action-Verification Loop**: The agent observes the current screen, thinks about the next step, executes an action (click, type, scroll), and verifies the result before proceeding.
 - **Self-Learning Skills**: Successful task execution logs are automatically synthesized into reusable `SKILL.md` recipes, allowing the agent to learn and repeat complex workflows.
 - **Privacy-First Design**: Includes a built-in privacy system that automatically blinds the agent when sensitive financial or banking applications are in focus.
