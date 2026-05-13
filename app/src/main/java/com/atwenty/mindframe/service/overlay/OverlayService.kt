@@ -440,6 +440,11 @@ class OverlayService : Service() {
             gravity = Gravity.TOP or Gravity.START
             this.x = x.toInt() - (size / 2)
             this.y = y.toInt() - (size / 2)
+            // Ensure the dot can draw over the notch/status bar area
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+
+            // Modern way to layout as if system bars don't exist
+            setFitInsetsTypes(0)
         }
 
         try {
