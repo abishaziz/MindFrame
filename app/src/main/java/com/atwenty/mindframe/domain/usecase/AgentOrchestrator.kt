@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class AgentOrchestrator(
     private val ollamaProvider: OllamaCloudProvider,
     private val skillRegistry: SkillRegistry,
-    private val skillGenerator: com.atwenty.mindframe.skills.SkillGenerator
+    private val skillGenerator: com.atwenty.mindframe.skills.SkillGenerator,
+    private val settingsRepository: com.atwenty.mindframe.data.local.SettingsRepository
 ) {
     companion object {
         private const val TAG = "MF_Orchestrator"
@@ -101,6 +102,13 @@ class AgentOrchestrator(
                 _status.value = AgentStatus.Thinking(0)
                 emitChat(ChatMessage.User(task))
 
+                // If memory awareness is disabled, clear history for the LLM but keep UI bubbles
+                if (!settingsRepository.isMemoryAware) {
+                    Log.i(TAG, "Memory awareness disabled: clearing LLM context for new task")
+                    conversationHistory.clear()
+                    conversationHistory.add(OllamaMessage(role = "system", content = systemPrompt ?: ""))
+                }
+                
                 // Ensure session is active (safety net if startNewSession wasn't called)
                 if (!sessionActive) {
                     Log.w(TAG, "No active session found, starting one automatically")

@@ -14,7 +14,7 @@ class MindFrameApp : Application() {
     val ollamaProvider by lazy { OllamaCloudProvider(settingsRepository) }
     val skillRegistry by lazy { SkillRegistry(this) }
     val skillGenerator by lazy { SkillGenerator(ollamaProvider, skillRegistry) }
-    val orchestrator by lazy { AgentOrchestrator(ollamaProvider, skillRegistry, skillGenerator) }
+    val orchestrator by lazy { AgentOrchestrator(ollamaProvider, skillRegistry, skillGenerator, settingsRepository) }
     
     override fun onCreate() {
         super.onCreate()

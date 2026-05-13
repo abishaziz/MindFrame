@@ -29,6 +29,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var etBaseUrl: TextInputEditText
     private lateinit var etModelName: TextInputEditText
     private lateinit var switchNotifications: SwitchMaterial
+    private lateinit var switchMemoryAware: SwitchMaterial
     private lateinit var switchDevMode: SwitchMaterial
     private lateinit var tvCurrentTheme: TextView
 
@@ -54,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
         etBaseUrl = findViewById(R.id.et_base_url)
         etModelName = findViewById(R.id.et_model_name)
         switchNotifications = findViewById(R.id.switch_notifications)
+        switchMemoryAware = findViewById(R.id.switch_memory_aware)
         switchDevMode = findViewById(R.id.switch_dev_mode)
         findViewById<android.view.View>(R.id.btn_manage_skills).setOnClickListener {
             startActivity(Intent(this, SkillListActivity::class.java))
@@ -64,6 +66,7 @@ class SettingsActivity : AppCompatActivity() {
         etBaseUrl.setText(settingsRepository.ollamaBaseUrl)
         etModelName.setText(settingsRepository.modelName)
         switchNotifications.isChecked = settingsRepository.isNotificationReadingEnabled
+        switchMemoryAware.isChecked = settingsRepository.isMemoryAware
         switchDevMode.isChecked = settingsRepository.isDeveloperMode
         
         tvCurrentTheme = findViewById(R.id.tv_current_theme)
@@ -111,6 +114,7 @@ class SettingsActivity : AppCompatActivity() {
         settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_BASE_URL }
         settingsRepository.modelName = etModelName.text?.toString()?.trim()?.ifEmpty { SettingsRepository.DEFAULT_MODEL } ?: SettingsRepository.DEFAULT_MODEL
         settingsRepository.isNotificationReadingEnabled = switchNotifications.isChecked
+        settingsRepository.isMemoryAware = switchMemoryAware.isChecked
         settingsRepository.isDeveloperMode = switchDevMode.isChecked
 
         Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show()
