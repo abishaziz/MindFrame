@@ -129,6 +129,15 @@ class SkillRegistry(private val context: Context) {
                 "Call this as the first action if you are following a known RECIPE. This signals your intent to the system.",
                 mapOf("skill_name" to OllamaProperty("string", "The name of the recipe you are starting.")),
                 listOf("skill_name")
+            ),
+            createTool(
+                "click_coordinate",
+                "Clicks at a specific screen position using percentage coordinates. Use this ONLY when the UI tree is unavailable and you are relying on a screenshot.",
+                mapOf(
+                    "x_percent" to OllamaProperty("integer", "Horizontal position as percentage 0-100%, where 0 is the left edge and 100% is the right edge."),
+                    "y_percent" to OllamaProperty("integer", "Vertical position as percentage 0-100%, where 0 is the top edge and 100% is the bottom edge.")
+                ),
+                listOf("x_percent", "y_percent")
             )
         )
     }
@@ -163,6 +172,11 @@ class SkillRegistry(private val context: Context) {
             "ask_user_question" -> "WAITING_FOR_USER: ${args["question"] ?: "How can I help you?"}"
             "get_installed_apps" -> executeGetInstalledApps()
             "started_skill" -> "SKILL_STARTED: ${args["skill_name"] ?: "Unknown"}"
+            "click_coordinate" -> {
+                val x = args["x_percent"]?.toIntOrNull() ?: return "Invalid x_percent"
+                val y = args["y_percent"]?.toIntOrNull() ?: return "Invalid y_percent"
+                if (driver.clickCoordinate(x, y)) "Clicked at ($x%, $y%) successfully" else "Failed to click at ($x%, $y%)"
+            }
             else -> "Unknown tool: $name"
         }
     }

@@ -203,10 +203,10 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             val argsString = match.groupValues.getOrNull(2) ?: ""
 
             val argsMap = mutableMapOf<String, String>()
-            val argRegex = Regex("(\\w+)\\s*=\\s*\"([^\"]*)\"")
+            val argRegex = Regex("""(\w+)\s*=\s*(?:"([^"]*)"|(\w+))""")
             argRegex.findAll(argsString).forEach { argMatch ->
                 val argName = argMatch.groupValues[1]
-                val argValue = argMatch.groupValues[2]
+                val argValue = argMatch.groupValues[2].ifEmpty { argMatch.groupValues[3] }
                 argsMap[argName] = argValue
             }
 

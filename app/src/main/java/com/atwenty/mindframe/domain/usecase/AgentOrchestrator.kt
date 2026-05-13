@@ -25,7 +25,13 @@ class AgentOrchestrator(
         private const val MAX_STEPS = 15
         private const val SCREEN_CHANGE_TIMEOUT_MS = 2000L
         private const val OVERLAY_HIDE_DELAY_MS = 100L
+        private const val SPARSE_NODE_THRESHOLD = 5
     }
+
+    private data class ScreenSnapshot(
+        val text: String,
+        val screenshotBase64: String? = null
+    )
 
     private val _status = MutableStateFlow<AgentStatus>(AgentStatus.Idle)
     val status: StateFlow<AgentStatus> = _status.asStateFlow()
@@ -101,14 +107,24 @@ class AgentOrchestrator(
                     _status.value = AgentStatus.Thinking(step)
 
                     // 1. OBSERVE: Capture current screen
-                    val uiSnapshot = captureScreen()
+                    val snapshot = captureScreen()
+                    val uiSnapshot = snapshot.text
+                    val imagesList = snapshot.screenshotBase64?.let { listOf(it) }
+
+                    // Build the text content with a hint if screenshot is attached
+                    val screenContent = if (snapshot.screenshotBase64 != null) {
+                        "Current screen state:\n$uiSnapshot\n\n(Screenshot attached — UI tree was sparse or unavailable. Use click_coordinate for interactions.)"
+                    } else {
+                        "Current screen state:\n$uiSnapshot"
+                    }
 
                     // Add observation to conversation
                     if (step > 1) {
                         conversationHistory.add(
                             OllamaMessage(
                                 role = "user",
-                                content = "Current screen state:\n$uiSnapshot"
+                                content = screenContent,
+                                images = imagesList
                             )
                         )
                     } else {
@@ -116,7 +132,8 @@ class AgentOrchestrator(
                         val lastIdx = conversationHistory.lastIndex
                         val lastMsg = conversationHistory[lastIdx]
                         conversationHistory[lastIdx] = lastMsg.copy(
-                            content = "${lastMsg.content}\n\nCurrent screen state:\n$uiSnapshot"
+                            content = "${lastMsg.content}\n\n$screenContent",
+                            images = imagesList
                         )
                     }
 
@@ -298,18 +315,28 @@ class AgentOrchestrator(
 
     // --- Private Helpers ---
 
-    private suspend fun captureScreen(): String {
+    private suspend fun captureScreen(): ScreenSnapshot {
         // Hide overlay before capturing
         onHideOverlay?.invoke()
         delay(OVERLAY_HIDE_DELAY_MS)
 
-        val screenText = driver?.readScreenAsText()
+        val screenText = ""//driver?.readScreenAsText()
             ?: "[Accessibility service not connected - cannot read screen]"
+
+        // Evaluate if we need vision fallback
+        val isBlind = screenText.contains("no accessibility root available")
+        val nodeCount = Regex("\\[node_").findAll(screenText).count()
+
+        var screenshotBase64: String? = null
+        if (isBlind || nodeCount < SPARSE_NODE_THRESHOLD) {
+            Log.i(TAG, "Screen is blind or sparse ($nodeCount nodes). Taking screenshot fallback.")
+            screenshotBase64 = driver?.takeScreenshot()
+        }
 
         // Show overlay again
         onShowOverlay?.invoke()
 
-        return screenText
+        return ScreenSnapshot(screenText, screenshotBase64)
     }
 
     private suspend fun waitForScreenChange() {

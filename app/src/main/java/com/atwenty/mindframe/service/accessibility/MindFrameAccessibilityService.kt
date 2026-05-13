@@ -337,6 +337,31 @@ class MindFrameAccessibilityService : AccessibilityService(), AccessibilityDrive
         }
     }
 
+    override fun clickCoordinate(xPercent: Int, yPercent: Int): Boolean {
+        return try {
+            val metrics = resources.displayMetrics
+            val x = metrics.widthPixels * xPercent / 100f
+            val y = metrics.heightPixels * yPercent / 100f
+
+            Log.d(TAG, "clickCoordinate: ($xPercent%, $yPercent%) -> pixel ($x, $y)")
+
+            val path = Path().apply { moveTo(x, y) }
+            val gesture = GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
+                .build()
+
+            val result = dispatchGesture(gesture, null, null)
+
+            // Show debug circle AFTER the click so it doesn't eat the gesture
+            (applicationContext as? MindFrameApp)?.orchestrator?.onDebugClick?.invoke(x, y)
+
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "clickCoordinate failed", e)
+            false
+        }
+    }
+
     // --- Private Helpers ---
 
     /**

@@ -41,6 +41,9 @@ interface AccessibilityDriver {
     /** Returns the package name of the currently focused window. */
     fun getCurrentPackage(): String?
 
+    /** Clicks at a specific screen coordinate using percentages (0-100%). Used as a fallback when the UI tree is unavailable. */
+    fun clickCoordinate(xPercent: Int, yPercent: Int): Boolean
+
     /** Returns true if the accessibility service is connected and ready. */
     fun isReady(): Boolean
 }
