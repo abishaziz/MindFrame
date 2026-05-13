@@ -37,6 +37,7 @@ class AgentOrchestrator(
     private var conversationHistory = mutableListOf<OllamaMessage>()
     private var currentSessionLog: SessionLog? = null
     private var currentSkillType: SkillType = SkillType.NEW
+    private var sessionActive = false
 
     // System prompt, loaded once and cached
     private var systemPrompt: String? = null
@@ -71,7 +72,25 @@ class AgentOrchestrator(
     }
 
     /**
+     * Start a new session. Clears all conversation history and re-injects the system prompt.
+     * Called once when the OverlayService is created (fresh app launch).
+     */
+    fun startNewSession() {
+        forceStop(showStopMessage = true) // Reuse existing stop logic
+        conversationHistory.clear()
+        conversationHistory.add(OllamaMessage(role = "system", content = systemPrompt ?: ""))
+        _chatMessages.resetReplayCache() // Wipe UI history for the new session
+        currentSessionLog = null
+        currentSkillType = SkillType.NEW
+        sessionActive = true
+        _status.value = AgentStatus.Idle
+        Log.i(TAG, "═══ NEW SESSION STARTED ═══")
+        logHistoryStats("Session initialized")
+    }
+
+    /**
      * Execute a user task using the Reasoning-Action-Verification loop.
+     * The conversation history is preserved across multiple calls (multi-turn).
      */
     fun executeTask(task: String, scope: CoroutineScope) {
         // Cancel any existing task
@@ -82,16 +101,20 @@ class AgentOrchestrator(
                 _status.value = AgentStatus.Thinking(0)
                 emitChat(ChatMessage.User(task))
 
-                // Initialize conversation
-                conversationHistory.clear()
-                conversationHistory.add(OllamaMessage(role = "system", content = systemPrompt ?: ""))
+                // Ensure session is active (safety net if startNewSession wasn't called)
+                if (!sessionActive) {
+                    Log.w(TAG, "No active session found, starting one automatically")
+                    startNewSession()
+                }
 
-                // Initialize session log
+                // Initialize session log for this specific task
                 currentSessionLog = SessionLog(taskDescription = task)
                 currentSkillType = SkillType.NEW // Default to NEW
 
-                // Add user task
+                // Add user task to the ongoing conversation
                 conversationHistory.add(OllamaMessage(role = "user", content = task))
+                Log.i(TAG, "── New Task: \"$task\" ──")
+                logHistoryStats("Task started")
 
                 // Run the Reasoning-Action-Verification loop
                 for (step in 1..MAX_STEPS) {
@@ -99,6 +122,7 @@ class AgentOrchestrator(
 
                     Log.i(TAG, "=== Step $step / $MAX_STEPS ===")
                     _status.value = AgentStatus.Thinking(step)
+                    logHistoryStats("Step $step")
 
                     // 1. OBSERVE: Capture current screen
                     val uiSnapshot = captureScreen()
@@ -278,11 +302,11 @@ class AgentOrchestrator(
     /**
      * Force stop the current task.
      */
-    fun forceStop(closeApp: Boolean) {
+    fun forceStop(showStopMessage: Boolean) {
         currentJob?.cancel()
         currentJob = null
         _status.value = AgentStatus.Idle
-        if (!closeApp) {
+        if (!showStopMessage) {
             emitChat(ChatMessage.Agent("🛑 Task force stopped"))
         }
         Log.i(TAG, "Task force stopped")
@@ -292,8 +316,21 @@ class AgentOrchestrator(
 
     fun clearConversation() {
         conversationHistory.clear()
+        _chatMessages.resetReplayCache() // Wipe UI history
         currentSessionLog = null
+        sessionActive = false
         _status.value = AgentStatus.Idle
+        Log.i(TAG, "═══ SESSION ENDED — Conversation cleared ═══")
+    }
+
+    /**
+     * Logs current conversation history statistics for debugging and future memory management.
+     */
+    private fun logHistoryStats(context: String) {
+        val messageCount = conversationHistory.size
+        val totalChars = conversationHistory.sumOf { it.content.length }
+        val roleCounts = conversationHistory.groupingBy { it.role }.eachCount()
+        Log.d(TAG, "[$context] History: $messageCount msgs, ${totalChars} chars | Breakdown: $roleCounts")
     }
 
     // --- Private Helpers ---
