@@ -35,17 +35,54 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
     }
 
     override suspend fun sendMessage(
-        messages: List<OllamaMessage>,
-        tools: List<OllamaTool>?
+        messages: List<AgentMessage>,
+        tools: List<AgentTool>?
     ): AgentResponse {
         val baseUrl = settingsRepository.ollamaBaseUrl.trimEnd('/')
         val apiKey = settingsRepository.ollamaApiKey
         val model = settingsRepository.modelName
 
+        val ollamaMessages = messages.map {
+            OllamaMessage(
+                role = it.role,
+                content = it.content,
+                images = it.imagesBase64,
+                toolCalls = it.toolCalls?.map { tc ->
+                    OllamaToolCall(
+                        function = OllamaToolCallFunction(
+                            name = tc.name,
+                            arguments = tc.arguments.mapValues { arg -> com.google.gson.JsonPrimitive(arg.value) }
+                        )
+                    )
+                }
+            )
+        }
+
+        val ollamaTools = tools?.map {
+            OllamaTool(
+                type = it.type,
+                function = OllamaFunction(
+                    name = it.function.name,
+                    description = it.function.description,
+                    parameters = OllamaParameters(
+                        type = it.function.parameters.type,
+                        properties = it.function.parameters.properties.mapValues { prop ->
+                            OllamaProperty(
+                                type = prop.value.type,
+                                description = prop.value.description,
+                                enumValues = prop.value.enumValues
+                            )
+                        },
+                        required = it.function.parameters.required
+                    )
+                )
+            )
+        }
+
         val ollamaRequest = OllamaRequest(
             model = model,
-            messages = messages,
-            tools = if (tools?.isNotEmpty() == true) tools else null,
+            messages = ollamaMessages,
+            tools = if (ollamaTools?.isNotEmpty() == true) ollamaTools else null,
             stream = false
         )
 

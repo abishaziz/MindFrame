@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class AgentOrchestrator(
-    private val ollamaProvider: OllamaCloudProvider,
+    private val modelProvider: ModelProvider,
     private val skillRegistry: SkillRegistry,
     private val skillGenerator: com.atwenty.mindframe.skills.SkillGenerator,
     private val settingsRepository: com.atwenty.mindframe.data.local.SettingsRepository
@@ -35,7 +35,7 @@ class AgentOrchestrator(
     val chatMessages: SharedFlow<ChatMessage> = _chatMessages.asSharedFlow()
 
     private var currentJob: Job? = null
-    private var conversationHistory = mutableListOf<OllamaMessage>()
+    private var conversationHistory = mutableListOf<AgentMessage>()
     private var currentSessionLog: SessionLog? = null
     private var currentSkillType: SkillType = SkillType.NEW
     private var sessionActive = false
@@ -79,7 +79,7 @@ class AgentOrchestrator(
     fun startNewSession() {
         forceStop(showStopMessage = true) // Reuse existing stop logic
         conversationHistory.clear()
-        conversationHistory.add(OllamaMessage(role = "system", content = systemPrompt ?: ""))
+        conversationHistory.add(AgentMessage(role = "system", content = systemPrompt ?: ""))
         _chatMessages.resetReplayCache() // Wipe UI history for the new session
         currentSessionLog = null
         currentSkillType = SkillType.NEW
@@ -106,7 +106,7 @@ class AgentOrchestrator(
                 if (!settingsRepository.isMemoryAware) {
                     Log.i(TAG, "Memory awareness disabled: clearing LLM context for new task")
                     conversationHistory.clear()
-                    conversationHistory.add(OllamaMessage(role = "system", content = systemPrompt ?: ""))
+                    conversationHistory.add(AgentMessage(role = "system", content = systemPrompt ?: ""))
                 }
                 
                 // Ensure session is active (safety net if startNewSession wasn't called)
@@ -120,7 +120,7 @@ class AgentOrchestrator(
                 currentSkillType = SkillType.NEW // Default to NEW
 
                 // Add user task to the ongoing conversation
-                conversationHistory.add(OllamaMessage(role = "user", content = task))
+                conversationHistory.add(AgentMessage(role = "user", content = task))
                 Log.i(TAG, "── New Task: \"$task\" ──")
                 logHistoryStats("Task started")
 
@@ -138,7 +138,7 @@ class AgentOrchestrator(
                     // Add observation to conversation
                     if (step > 1) {
                         conversationHistory.add(
-                            OllamaMessage(
+                            AgentMessage(
                                 role = "user",
                                 content = "Current screen state:\n$uiSnapshot"
                             )
@@ -153,7 +153,7 @@ class AgentOrchestrator(
                     }
 
                     // 2. THINK: Send to LLM
-                    val response = ollamaProvider.sendMessage(
+                    val response = modelProvider.sendMessage(
                         messages = conversationHistory,
                         tools = skillRegistry.getAvailableTools()
                     )
@@ -167,7 +167,7 @@ class AgentOrchestrator(
 
                     // Add assistant response to conversation
                     conversationHistory.add(
-                        OllamaMessage(role = "assistant", content = response.rawContent)
+                        AgentMessage(role = "assistant", content = response.rawContent)
                     )
 
                     // 3. ACT: Execute tool call if present
@@ -250,7 +250,7 @@ class AgentOrchestrator(
                                 val userAnswer = onAskUser?.invoke(question)?.await() ?: "No response"
                                 emitChat(ChatMessage.User(userAnswer))
                                 conversationHistory.add(
-                                    OllamaMessage(role = "user", content = "User response: $userAnswer")
+                                    AgentMessage(role = "user", content = "User response: $userAnswer")
                                 )
                                 continue
                             }
@@ -268,7 +268,7 @@ class AgentOrchestrator(
 
                         // Add tool result to conversation
                         conversationHistory.add(
-                            OllamaMessage(role = "user", content = "Tool result: $toolResult")
+                            AgentMessage(role = "user", content = "Tool result: $toolResult")
                         )
 
                         // 4. VERIFY: Wait for screen to change

@@ -10,7 +10,7 @@ interface ModelProvider {
      * Returns an AgentResponse containing the LLM's thought and optional tool call.
      */
     suspend fun sendMessage(
-        messages: List<OllamaMessage>,
-        tools: List<OllamaTool>? = null
+        messages: List<AgentMessage>,
+        tools: List<AgentTool>? = null
     ): AgentResponse
 }

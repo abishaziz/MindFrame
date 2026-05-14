@@ -11,10 +11,10 @@ import com.atwenty.mindframe.skills.registry.SkillRegistry
 class MindFrameApp : Application() {
     
     val settingsRepository by lazy { SettingsRepository(this) }
-    val ollamaProvider by lazy { OllamaCloudProvider(settingsRepository) }
+    val modelProvider by lazy { OllamaCloudProvider(settingsRepository) }
     val skillRegistry by lazy { SkillRegistry(this) }
-    val skillGenerator by lazy { SkillGenerator(ollamaProvider, skillRegistry) }
-    val orchestrator by lazy { AgentOrchestrator(ollamaProvider, skillRegistry, skillGenerator, settingsRepository) }
+    val skillGenerator by lazy { SkillGenerator(modelProvider, skillRegistry) }
+    val orchestrator by lazy { AgentOrchestrator(modelProvider, skillRegistry, skillGenerator, settingsRepository) }
     
     override fun onCreate() {
         super.onCreate()

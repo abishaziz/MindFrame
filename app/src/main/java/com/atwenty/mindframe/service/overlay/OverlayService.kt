@@ -496,7 +496,7 @@ class OverlayService : Service() {
             serviceScope.launch(Dispatchers.IO) {
                 try {
                     val generator = SkillGenerator(
-                        (application as MindFrameApp).ollamaProvider,
+                        (application as MindFrameApp).modelProvider,
                         (application as MindFrameApp).skillRegistry
                     )
                     generator.generateFromSession(sessionLog)

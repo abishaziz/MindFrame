@@ -5,10 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.AlarmClock
 import android.util.Log
-import com.atwenty.mindframe.domain.model.OllamaFunction
-import com.atwenty.mindframe.domain.model.OllamaParameters
-import com.atwenty.mindframe.domain.model.OllamaProperty
-import com.atwenty.mindframe.domain.model.OllamaTool
+import com.atwenty.mindframe.domain.model.AgentFunction
+import com.atwenty.mindframe.domain.model.AgentParameters
+import com.atwenty.mindframe.domain.model.AgentProperty
+import com.atwenty.mindframe.domain.model.AgentTool
 import com.atwenty.mindframe.service.accessibility.AccessibilityDriver
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -31,33 +31,33 @@ class SkillRegistry(private val context: Context) {
         loadLearnedRecipes()
     }
 
-    fun getAvailableTools(): List<OllamaTool> {
+    fun getAvailableTools(): List<AgentTool> {
         return listOf(
             createTool(
                 "open_app", 
                 "Opens a mobile application by its package name.",
-                mapOf("packageName" to OllamaProperty("string", "The Android package name of the app.")),
+                mapOf("packageName" to AgentProperty("string", "The Android package name of the app.")),
                 listOf("packageName")
             ),
             createTool(
                 "click_node",
                 "Clicks on a UI element using its ID from the screen capture.",
-                mapOf("nodeId" to OllamaProperty("string", "The unique ID of the node to click.")),
+                mapOf("nodeId" to AgentProperty("string", "The unique ID of the node to click.")),
                 listOf("nodeId")
             ),
             createTool(
                 "type_text",
                 "Types text into an editable UI element.",
                 mapOf(
-                    "nodeId" to OllamaProperty("string", "The ID of the text field."),
-                    "text" to OllamaProperty("string", "The text to enter.")
+                    "nodeId" to AgentProperty("string", "The ID of the text field."),
+                    "text" to AgentProperty("string", "The text to enter.")
                 ),
                 listOf("nodeId", "text")
             ),
             createTool(
                 "scroll",
                 "Scrolls the screen in a specified direction.",
-                mapOf("direction" to OllamaProperty("string", "up, down, left, or right", listOf("up", "down", "left", "right"))),
+                mapOf("direction" to AgentProperty("string", "up, down, left, or right", listOf("up", "down", "left", "right"))),
                 listOf("direction")
             ),
             createTool(
@@ -75,47 +75,47 @@ class SkillRegistry(private val context: Context) {
             createTool(
                 "search_web",
                 "Searches the web for information using DuckDuckGo.",
-                mapOf("query" to OllamaProperty("string", "The search query.")),
+                mapOf("query" to AgentProperty("string", "The search query.")),
                 listOf("query")
             ),
             createTool(
                 "set_alarm",
                 "Sets a system alarm for a specific time.",
                 mapOf(
-                    "hour" to OllamaProperty("integer", "0-23"),
-                    "minute" to OllamaProperty("integer", "0-59"),
-                    "message" to OllamaProperty("string", "Label for the alarm")
+                    "hour" to AgentProperty("integer", "0-23"),
+                    "minute" to AgentProperty("integer", "0-59"),
+                    "message" to AgentProperty("string", "Label for the alarm")
                 ),
                 listOf("hour", "minute")
             ),
             createTool(
                 "open_deep_link",
                 "Opens a URL or deep link in the appropriate app.",
-                mapOf("uri" to OllamaProperty("string", "The URI to open.")),
+                mapOf("uri" to AgentProperty("string", "The URI to open.")),
                 listOf("uri")
             ),
             createTool(
                 "wait",
                 "Waits for a few seconds for the UI to settle.",
-                mapOf("seconds" to OllamaProperty("integer", "Time to wait")),
+                mapOf("seconds" to AgentProperty("integer", "Time to wait")),
                 listOf("seconds")
             ),
             createTool(
                 "report_success",
                 "Call this when the user's task is fully completed. Provide a summary of what was done.",
-                mapOf("message" to OllamaProperty("string", "A final summary of the completed task.")),
+                mapOf("message" to AgentProperty("string", "A final summary of the completed task.")),
                 listOf("message")
             ),
             createTool(
                 "report_error",
                 "Call this if you are stuck or encountered a terminal error that prevents you from finishing.",
-                mapOf("reason" to OllamaProperty("string", "The reason why the task failed.")),
+                mapOf("reason" to AgentProperty("string", "The reason why the task failed.")),
                 listOf("reason")
             ),
             createTool(
                 "ask_user_question",
                 "Call this if you need the user to provide information, make a choice, or perform an action you cannot do.",
-                mapOf("question" to OllamaProperty("string", "The question or instruction for the user.")),
+                mapOf("question" to AgentProperty("string", "The question or instruction for the user.")),
                 listOf("question")
             ),
             createTool(
@@ -127,7 +127,7 @@ class SkillRegistry(private val context: Context) {
             createTool(
                 "started_skill",
                 "Call this as the first action if you are following a known RECIPE. This signals your intent to the system.",
-                mapOf("skill_name" to OllamaProperty("string", "The name of the recipe you are starting.")),
+                mapOf("skill_name" to AgentProperty("string", "The name of the recipe you are starting.")),
                 listOf("skill_name")
             )
         )
@@ -351,14 +351,14 @@ class SkillRegistry(private val context: Context) {
     private fun createTool(
         name: String,
         description: String,
-        properties: Map<String, OllamaProperty>,
+        properties: Map<String, AgentProperty>,
         required: List<String>
-    ): OllamaTool {
-        return OllamaTool(
-            function = OllamaFunction(
+    ): AgentTool {
+        return AgentTool(
+            function = AgentFunction(
                 name = name,
                 description = description,
-                parameters = OllamaParameters(
+                parameters = AgentParameters(
                     properties = properties,
                     required = required
                 )
