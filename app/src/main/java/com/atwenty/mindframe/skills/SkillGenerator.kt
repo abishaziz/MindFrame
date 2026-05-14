@@ -10,7 +10,7 @@ import com.atwenty.mindframe.skills.registry.SkillRegistry
  * Generates SKILL.md files from successful session logs using the LLM.
  */
 class SkillGenerator(
-    private val modelProvider: ModelProvider,
+    private val providerFactory: () -> ModelProvider,
     private val skillRegistry: SkillRegistry
 ) {
     companion object {
@@ -27,7 +27,7 @@ class SkillGenerator(
             AgentMessage(role = "user", content = prompt)
         )
 
-        val response = modelProvider.sendMessage(messages, tools = null)
+        val response = providerFactory().sendMessage(messages, tools = null)
 
         // Extract and save the generated SKILL.md
         val skillContent = response.rawContent.trim()

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class AgentOrchestrator(
-    private val modelProvider: ModelProvider,
+    private val providerFactory: () -> ModelProvider,
     private val skillRegistry: SkillRegistry,
     private val skillGenerator: com.atwenty.mindframe.skills.SkillGenerator,
     private val settingsRepository: com.atwenty.mindframe.data.local.SettingsRepository
@@ -153,7 +153,7 @@ class AgentOrchestrator(
                     }
 
                     // 2. THINK: Send to LLM
-                    val response = modelProvider.sendMessage(
+                    val response = providerFactory().sendMessage(
                         messages = conversationHistory,
                         tools = skillRegistry.getAvailableTools()
                     )

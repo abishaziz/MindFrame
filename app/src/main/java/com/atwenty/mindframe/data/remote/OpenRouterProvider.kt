@@ -5,6 +5,7 @@ import com.atwenty.mindframe.data.local.SettingsRepository
 import com.atwenty.mindframe.domain.model.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -13,23 +14,20 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : ModelProvider {
+class OpenRouterProvider(private val settingsRepository: SettingsRepository) : ModelProvider {
 
     companion object {
-        private const val TAG = "MF_OllamaCloud"
-        private const val ENDPOINT = "/api/chat"
+        private const val TAG = "MF_OpenRouter"
         private const val MAX_RETRIES = 3
-        private val BACKOFF_DELAYS = listOf(1000L, 2000L, 4000L) // Exponential backoff
+        private val BACKOFF_DELAYS = listOf(1000L, 2000L, 4000L)
     }
 
-    private val gson: Gson = GsonBuilder()
-        .setLenient()
-        .create()
+    private val gson: Gson = GsonBuilder().setLenient().create()
 
     private val client by lazy {
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS) // LLM responses can take time
+            .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
@@ -38,36 +36,29 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
         messages: List<AgentMessage>,
         tools: List<AgentTool>?
     ): AgentResponse {
-        val baseUrl = settingsRepository.ollamaBaseUrl.trimEnd('/')
-        val apiKey = settingsRepository.ollamaApiKey
-        val model = settingsRepository.ollamaModel
+        val baseUrl = settingsRepository.openRouterBaseUrl.trimEnd('/')
+        val apiKey = settingsRepository.openRouterApiKey
+        val model = settingsRepository.openRouterModel
 
-        val ollamaMessages = messages.map {
-            OllamaMessage(
-                role = it.role,
-                content = it.content,
-                images = it.imagesBase64,
-                toolCalls = it.toolCalls?.map { tc ->
-                    OllamaToolCall(
-                        function = OllamaToolCallFunction(
-                            name = tc.name,
-                            arguments = tc.arguments.mapValues { arg -> com.google.gson.JsonPrimitive(arg.value) }
-                        )
-                    )
-                }
+        if (apiKey.isBlank()) {
+            return AgentResponse(
+                thought = "OpenRouter API Key is missing. Please configure it in Settings.",
+                toolCall = null,
+                rawContent = "API Key Error"
             )
         }
 
-        val ollamaTools = tools?.map {
-            OllamaTool(
+        // 1. Map Tools
+        val openRouterTools = tools?.map {
+            OpenRouterTool(
                 type = it.type,
-                function = OllamaFunction(
+                function = OpenRouterFunction(
                     name = it.function.name,
                     description = it.function.description,
-                    parameters = OllamaParameters(
+                    parameters = OpenRouterParameters(
                         type = it.function.parameters.type,
                         properties = it.function.parameters.properties.mapValues { prop ->
-                            OllamaProperty(
+                            OpenRouterProperty(
                                 type = prop.value.type,
                                 description = prop.value.description,
                                 enumValues = prop.value.enumValues
@@ -79,53 +70,72 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             )
         }
 
-        val ollamaRequest = OllamaRequest(
+        // 2. Map Messages (Handling Multimodal Vision properly)
+        val openRouterMessages = messages.map { msg ->
+            val content: Any = if (!msg.imagesBase64.isNullOrEmpty()) {
+                val parts = mutableListOf<OpenRouterContentPart>()
+                if (msg.content.isNotBlank()) {
+                    parts.add(OpenRouterContentPart(type = "text", text = msg.content))
+                }
+                msg.imagesBase64.forEach { base64 ->
+                    // OpenRouter expects the data URI format for base64 images
+                    parts.add(
+                        OpenRouterContentPart(
+                            type = "image_url",
+                            imageUrl = OpenRouterImageUrl(url = "data:image/jpeg;base64,$base64")
+                        )
+                    )
+                }
+                parts
+            } else {
+                msg.content
+            }
+
+            OpenRouterMessage(
+                role = msg.role,
+                content = content
+            )
+        }
+
+        val request = OpenRouterRequest(
             model = model,
-            messages = ollamaMessages,
-            tools = if (ollamaTools?.isNotEmpty() == true) ollamaTools else null,
+            messages = openRouterMessages,
+            tools = if (openRouterTools?.isNotEmpty() == true) openRouterTools else null,
             stream = false
         )
 
-        val requestBody = gson.toJson(ollamaRequest)
-        Log.d(TAG, "Sending request to $baseUrl$ENDPOINT (model: $model)")
+        val requestBody = gson.toJson(request)
+        Log.d(TAG, "Sending request to $baseUrl/chat/completions (model: $model)")
 
         var lastException: Exception? = null
 
-        // Tier 1: Retry with exponential backoff
         for (attempt in 0 until MAX_RETRIES) {
             try {
                 val httpRequest = Request.Builder()
-                    .url("$baseUrl$ENDPOINT")
+                    // If baseUrl already ends with /chat/completions, don't append it again
+                    .url(if (baseUrl.endsWith("/chat/completions")) baseUrl else "$baseUrl/chat/completions")
                     .post(requestBody.toRequestBody("application/json".toMediaType()))
-                    .apply {
-                        if (apiKey.isNotBlank()) {
-                            addHeader("Authorization", "Bearer $apiKey")
-                        }
-                    }
+                    .addHeader("Authorization", "Bearer $apiKey")
+                    .addHeader("HTTP-Referer", "https://github.com/abishaziz/PersonalAgent") // OpenRouter requests this
+                    .addHeader("X-Title", "MindFrame Android Agent")
                     .build()
 
-                Log.d(TAG, ">>> SENDING REQUEST to LLM...")
-                Log.d(TAG, "Request payload: $requestBody")
-
+                Log.d(TAG, ">>> SENDING REQUEST to OpenRouter...")
+                
                 val response = client.newCall(httpRequest).execute()
                 val responseBody = response.body?.string() ?: ""
 
-                Log.d(TAG, "### RECEIVED RESPONSE from LLM (Status: ${response.code})")
-                Log.d(TAG, "Response result: $responseBody")
+                Log.d(TAG, "### RECEIVED RESPONSE from OpenRouter (Status: ${response.code})")
 
                 if (!response.isSuccessful) {
-                    if (response.code >= 500) {
-                        // Server error—retry
-                        Log.w(TAG, "Server error ${response.code}, attempt ${attempt + 1}")
+                    if (response.code >= 500 || response.code == 429) {
+                        Log.w(TAG, "Server/Rate limit error ${response.code}, attempt ${attempt + 1}")
                         lastException = IOException("Server error: ${response.code}")
-                        if (attempt < MAX_RETRIES - 1) {
-                            delay(BACKOFF_DELAYS[attempt])
-                        }
+                        if (attempt < MAX_RETRIES - 1) delay(BACKOFF_DELAYS[attempt])
                         continue
                     }
-                    // Client error—don't retry
                     return AgentResponse(
-                        thought = "API Error: ${response.code} - $responseBody",
+                        thought = "OpenRouter API Error: ${response.code} - $responseBody",
                         toolCall = null,
                         rawContent = responseBody
                     )
@@ -136,9 +146,7 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             } catch (e: IOException) {
                 Log.w(TAG, "Network error, attempt ${attempt + 1}: ${e.message}")
                 lastException = e
-                if (attempt < MAX_RETRIES - 1) {
-                    delay(BACKOFF_DELAYS[attempt])
-                }
+                if (attempt < MAX_RETRIES - 1) delay(BACKOFF_DELAYS[attempt])
             } catch (e: Exception) {
                 Log.e(TAG, "Unexpected error", e)
                 lastException = e
@@ -146,9 +154,8 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             }
         }
 
-        // Tier 3: All retries failed—notify user
         return AgentResponse(
-            thought = "Could not reach the AI server after $MAX_RETRIES attempts: ${lastException?.message}",
+            thought = "Could not reach OpenRouter after $MAX_RETRIES attempts: ${lastException?.message}",
             toolCall = null,
             rawContent = lastException?.message ?: "Unknown error"
         )
@@ -156,37 +163,54 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
 
     private fun parseResponse(responseBody: String): AgentResponse {
         return try {
-            val ollamaResponse = gson.fromJson(responseBody, OllamaResponse::class.java)
+            val response = gson.fromJson(responseBody, OpenRouterResponse::class.java)
 
-            if (ollamaResponse.error != null) {
+            if (response.error != null) {
                 return AgentResponse(
-                    thought = "Ollama error: ${ollamaResponse.error}",
+                    thought = "OpenRouter Error: ${response.error.message}",
                     toolCall = null,
                     rawContent = responseBody
                 )
             }
 
-            val message = ollamaResponse.message ?: return AgentResponse(
-                thought = "Empty response from LLM",
+            val choice = response.choices?.firstOrNull() ?: return AgentResponse(
+                thought = "Empty response from OpenRouter",
                 toolCall = null,
                 rawContent = responseBody
             )
 
-            // Check for tool calls in the response
+            val message = choice.message
+            val content = message.content ?: ""
+
+            // OpenRouter tool calls have arguments as a raw JSON string
             val toolCall = message.toolCalls?.firstOrNull()?.let { tc ->
+                val type = object : TypeToken<Map<String, Any>>() {}.type
+                val argsMap: Map<String, Any> = try {
+                    gson.fromJson(tc.function.arguments, type) ?: emptyMap()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to parse tool arguments: ${tc.function.arguments}", e)
+                    emptyMap()
+                }
+
+                // Convert all values to string for our internal ToolCall model
+                val stringArgs = argsMap.mapValues {
+                    if (it.value is Double && (it.value as Double) % 1 == 0.0) {
+                        (it.value as Double).toLong().toString()
+                    } else {
+                        it.value.toString()
+                    }
+                }
+
                 ToolCall(
                     name = tc.function.name,
-                    arguments = tc.function.arguments.mapValues { 
-                        if (it.value.isJsonPrimitive) it.value.asString else it.value.toString()
-                    }
+                    arguments = stringArgs
                 )
             }
 
-            // Try to extract structured thought from content
-            val content = message.content
+            // Extract thought from content block if possible, else use raw content
             val thought = extractThought(content)
 
-            // Fallback for manual tool calls in text
+            // Fallback
             val finalToolCall = toolCall ?: extractToolCallFromText(content)
 
             AgentResponse(
@@ -196,8 +220,7 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
             )
 
         } catch (e: Exception) {
-            // Tier 2: Malformed JSON—tell the LLM to try again
-            Log.e(TAG, "Failed to parse response: ${e.message}")
+            Log.e(TAG, "Failed to parse OpenRouter response: ${e.message}")
             AgentResponse(
                 thought = "Failed to parse LLM response: ${e.message}",
                 toolCall = null,
@@ -206,9 +229,6 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
         }
     }
 
-    /**
-     * Extracts the "thought" field from the LLM's content.
-     */
     private fun extractThought(content: String): String {
         return try {
             val jsonContent = content.trim()
@@ -227,10 +247,6 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
         }
     }
 
-    /**
-     * Fallback parser for manual tool calls like:
-     * [tool_call: name with arg1="val1" arg2="val2"]
-     */
     private fun extractToolCallFromText(content: String): ToolCall? {
         try {
             val toolRegex = Regex("\\[tool_call:\\s*(\\w+)(?:\\s+with\\s+(.+))?\\s*\\]")
@@ -249,7 +265,6 @@ class OllamaCloudProvider(private val settingsRepository: SettingsRepository) : 
 
             return ToolCall(name, argsMap)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse manual tool call from text", e)
             return null
         }
     }
