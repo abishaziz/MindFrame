@@ -320,8 +320,11 @@ class OverlayService : Service() {
                         is AgentOrchestrator.ChatMessage.User -> {
                             addChatBubble(message.text, isUser = true)
                         }
-                        is AgentOrchestrator.ChatMessage.Thought -> addChatBubble(message.text, isUser = false)
+                        is AgentOrchestrator.ChatMessage.Commentary -> {
+                            addOrAppendCommentaryBubble(message.text)
+                        }
                         is AgentOrchestrator.ChatMessage.Agent -> {
+                            collapseLastCommentary()
                             addChatBubble(message.text, isUser = false)
                         }
                     }
@@ -387,13 +390,123 @@ class OverlayService : Service() {
             }
 
             background = GradientDrawable().apply {
-                setColor(if (isUser) 0xFF3D5AFE.toInt() else 0xFF2A2A3A.toInt()) // Standardize cobalt
+                setColor(if (isUser) 0xFF3D5AFE.toInt() else 0xFF151520.toInt()) // Standardize cobalt
                 cornerRadius = 16f * resources.displayMetrics.density // 16dp Rule
             }
         }
 
         chatContainer.addView(bubble)
         scrollChat.post { scrollChat.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /**
+     * Adds a new Commentary bubble or appends text to the last one if it already exists.
+     * Commentary bubbles are center-aligned, collapsible, and visually distinct.
+     */
+    private fun addOrAppendCommentaryBubble(text: String) {
+        val density = resources.displayMetrics.density
+
+        // Check if the last child is already a Commentary bubble
+        val lastChild = if (chatContainer.childCount > 0) {
+            chatContainer.getChildAt(chatContainer.childCount - 1)
+        } else null
+
+        if (lastChild != null && lastChild.tag == "COMMENTARY_BUBBLE") {
+            // Append to existing Commentary bubble
+            val body = lastChild.findViewWithTag<TextView>("COMMENTARY_BODY")
+            body?.let {
+                it.text = "${it.text}\n\n$text"
+                it.visibility = View.VISIBLE
+            }
+            // Update header step count
+            val header = lastChild.findViewWithTag<TextView>("COMMENTARY_HEADER")
+            val stepCount = (lastChild.getTag(R.id.container_chat) as? Int ?: 1) + 1
+            lastChild.setTag(R.id.container_chat, stepCount)
+            header?.text = "⚙️ Agent Commentary ($stepCount steps)"
+        } else {
+            // Create a new Commentary bubble
+            val container = LinearLayout(themeContext ?: this).apply {
+                orientation = LinearLayout.VERTICAL
+                tag = "COMMENTARY_BUBBLE"
+                setTag(R.id.container_chat, 1) // Step counter
+
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = (8 * density).toInt()
+                    bottomMargin = (4 * density).toInt()
+                    marginStart = 48
+                    marginEnd = 48
+                }
+                layoutParams = lp
+
+                background = GradientDrawable().apply {
+                    setColor(0xFF2A2A3A.toInt())
+                    cornerRadius = 12f * density
+                    setStroke((1 * density).toInt(), 0xFF2E2E2E.toInt())
+                }
+                setPadding(
+                    (16 * density).toInt(),
+                    (6 * density).toInt(),
+                    (16 * density).toInt(),
+                    (6 * density).toInt()
+                )
+            }
+
+            // Header (always visible)
+            val header = TextView(themeContext ?: this).apply {
+                this.text = "⚙️ Agent Commentary (1 step)"
+                tag = "COMMENTARY_HEADER"
+                textSize = 11f
+                setTextColor(0xFF666677.toInt())
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+
+            // Body (the actual commentary text, expandable)
+            val body = TextView(themeContext ?: this).apply {
+                this.text = text
+                tag = "COMMENTARY_BODY"
+                textSize = 12f
+                setTextColor(0xFF777788.toInt())
+                setPadding(0, (8 * resources.displayMetrics.density).toInt(), 0, 0)
+                visibility = View.VISIBLE
+            }
+
+            // Click to toggle expand/collapse
+            container.setOnClickListener {
+                body.visibility = if (body.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                header.text = if (body.visibility == View.VISIBLE) {
+                    val count = container.getTag(R.id.container_chat) as? Int ?: 1
+                    "⚙️ Agent Commentary ($count steps)"
+                } else {
+                    val count = container.getTag(R.id.container_chat) as? Int ?: 1
+                    "⚙️ Agent Commentary ($count steps) ▶"
+                }
+            }
+
+            container.addView(header)
+            container.addView(body)
+            chatContainer.addView(container)
+        }
+
+        scrollChat.post { scrollChat.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /**
+     * Collapses the last Commentary bubble if one exists.
+     * Called automatically when an Agent message arrives.
+     */
+    private fun collapseLastCommentary() {
+        if (chatContainer.childCount == 0) return
+        val lastChild = chatContainer.getChildAt(chatContainer.childCount - 1)
+        if (lastChild != null && lastChild.tag == "COMMENTARY_BUBBLE") {
+            val body = lastChild.findViewWithTag<TextView>("COMMENTARY_BODY")
+            body?.visibility = View.GONE
+            val header = lastChild.findViewWithTag<TextView>("COMMENTARY_HEADER")
+            val count = lastChild.getTag(R.id.container_chat) as? Int ?: 1
+            header?.text = "⚙️ Agent Commentary ($count steps) ▶"
+        }
     }
 
 

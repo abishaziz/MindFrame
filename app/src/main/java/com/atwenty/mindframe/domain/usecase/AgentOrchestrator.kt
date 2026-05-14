@@ -162,7 +162,7 @@ class AgentOrchestrator(
                     val cleanedThought = response.thought.replace(Regex("\\[tool_call:.*?\\]"), "").trim()
                     Log.d(TAG, "LLM thought: $cleanedThought")
                     if (cleanedThought.isNotBlank()) {
-                        emitChat(ChatMessage.Thought(cleanedThought))
+                        emitChat(ChatMessage.Commentary(cleanedThought))
                     }
 
                     // Add assistant response to conversation
@@ -254,6 +254,15 @@ class AgentOrchestrator(
                                 )
                                 continue
                             }
+                            toolResult.startsWith("USER_REPLY:") -> {
+                                 val message = toolResult.removePrefix("USER_REPLY:")
+                                 emitChat(ChatMessage.Agent(message))
+                                 _status.value = AgentStatus.Completed(message, currentSkillType)
+                                 currentSessionLog?.steps?.add(
+                                     SessionStep(step, uiSnapshot, response.thought, response.toolCall, toolResult)
+                                 )
+                                 return@launch
+                             }
                              toolResult.startsWith("SKILL_STARTED:") -> {
                                  val skillName = toolResult.removePrefix("SKILL_STARTED:").trim()
                                  // Track state based on explicit tool call name
@@ -379,7 +388,7 @@ class AgentOrchestrator(
 
     sealed class ChatMessage {
         data class User(val text: String) : ChatMessage()
-        data class Thought(val text: String) : ChatMessage()
+        data class Commentary(val text: String) : ChatMessage()
         data class Agent(val text: String) : ChatMessage()
     }
 }

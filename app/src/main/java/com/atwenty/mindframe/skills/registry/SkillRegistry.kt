@@ -125,6 +125,12 @@ class SkillRegistry(private val context: Context) {
                 emptyList()
             ),
             createTool(
+                "reply_to_user",
+                "Use this to send a final reply to the user. Like a fallback tool if no other tool is needed.",
+                mapOf("message" to AgentProperty("string", "The message to display to the user.")),
+                listOf("message")
+            ),
+            createTool(
                 "started_skill",
                 "Call this as the first action if you are following a known RECIPE. This signals your intent to the system.",
                 mapOf("skill_name" to AgentProperty("string", "The name of the recipe you are starting.")),
@@ -162,6 +168,7 @@ class SkillRegistry(private val context: Context) {
             "report_error" -> "TASK_ERROR: ${args["reason"] ?: "Unknown error"}"
             "ask_user_question" -> "WAITING_FOR_USER: ${args["question"] ?: "How can I help you?"}"
             "get_installed_apps" -> executeGetInstalledApps()
+            "reply_to_user" -> "USER_REPLY: ${args["message"] ?: "..."}"
             "started_skill" -> "SKILL_STARTED: ${args["skill_name"] ?: "Unknown"}"
             else -> "Unknown tool: $name"
         }
