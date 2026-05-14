@@ -1,8 +1,8 @@
 package com.atwenty.mindframe.skills
 
 import android.util.Log
-import com.atwenty.mindframe.data.remote.OllamaCloudProvider
-import com.atwenty.mindframe.domain.model.OllamaMessage
+import com.atwenty.mindframe.domain.model.AgentMessage
+import com.atwenty.mindframe.domain.model.ModelProvider
 import com.atwenty.mindframe.domain.model.SessionLog
 import com.atwenty.mindframe.skills.registry.SkillRegistry
 
@@ -10,7 +10,7 @@ import com.atwenty.mindframe.skills.registry.SkillRegistry
  * Generates SKILL.md files from successful session logs using the LLM.
  */
 class SkillGenerator(
-    private val ollamaProvider: OllamaCloudProvider,
+    private val modelProvider: ModelProvider,
     private val skillRegistry: SkillRegistry
 ) {
     companion object {
@@ -23,11 +23,11 @@ class SkillGenerator(
         val prompt = buildPrompt(sessionLog)
 
         val messages = listOf(
-            OllamaMessage(role = "system", content = SKILL_SYNTHESIS_PROMPT),
-            OllamaMessage(role = "user", content = prompt)
+            AgentMessage(role = "system", content = SKILL_SYNTHESIS_PROMPT),
+            AgentMessage(role = "user", content = prompt)
         )
 
-        val response = ollamaProvider.sendMessage(messages, tools = null)
+        val response = modelProvider.sendMessage(messages, tools = null)
 
         // Extract and save the generated SKILL.md
         val skillContent = response.rawContent.trim()
