@@ -11,7 +11,7 @@ MindFrame is a powerful Android-based AI assistant designed to navigate and cont
 - **Reasoning-Action-Verification Loop**: The agent observes the current screen, thinks about the next step, executes an action (click, type, scroll), and verifies the result before proceeding.
 - **Self-Learning Skills**: Successful task execution logs are automatically synthesized into reusable `SKILL.md` recipes, allowing the agent to learn and repeat complex workflows.
 - **Privacy-First Design**: Includes a built-in privacy system that automatically blinds the agent when sensitive financial or banking applications are in focus.
-- **Ollama Integration**: Completely local-first or cloud-connected LLM support via the Ollama API (supports models like Llama 3, Phi-3, and Mistral).
+- **Multi-Provider Architecture**: Seamlessly switch between LLMs via Ollama and OpenRouter from the settings menu.
 - **Premium Floating Overlay**: A glassmorphic chat interface (Android 16+ blur) with dedicated controls for:
     - `+` **New Session**: Wipes agent memory and clears the chat.
     - `-` **Minimize**: Collapses to a floating bubble.
@@ -27,7 +27,7 @@ MindFrame is a powerful Android-based AI assistant designed to navigate and cont
 ## 📋 Prerequisites
 
 - **Android 16+** (SDK 36+) - Uses the latest Window Insets and Blur APIs.
-- **Ollama Server**: Running locally or accessible via a URL.
+- **LLM Provider**: Either an Ollama or OpenRouter API key.
 - **Permissions**: Accessibility, Overlay (System Alert Window), and POST_NOTIFICATIONS.
 
 ## 🤖 CI/CD
@@ -44,8 +44,8 @@ This project uses **GitHub Actions** for Continuous Integration. On every push t
 3. **Grant Permissions**: The app will guide you through granting Accessibility, Overlay, and Battery Optimization permissions on first launch.
 4. **Configure LLM**:
    - Open **Settings** from the floating overlay.
-   - Enter your **Ollama Base URL** and **Model Name** (e.g., `llama3`).
-   - (Optional) Enter your API Key if using a cloud-hosted Ollama instance.
+   - Tap **Active LLM Provider** to choose between **Ollama API** or **OpenRouter API**.
+   - Enter your provider-specific **API Key**, **Base URL**, and **Model Name** (e.g., `openai/gpt-4o-mini`).
 
 ## 🧪 Usage Examples
 

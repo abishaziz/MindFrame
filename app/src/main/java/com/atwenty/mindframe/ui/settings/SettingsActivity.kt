@@ -10,8 +10,10 @@ import com.atwenty.mindframe.R
 import com.atwenty.mindframe.data.local.SettingsRepository
 import com.atwenty.mindframe.skills.registry.SkillRegistry
 import com.atwenty.mindframe.ui.onboarding.PermissionActivity
+import com.atwenty.mindframe.domain.model.ProviderType
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.activity.enableEdgeToEdge
@@ -28,10 +30,14 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var etApiKey: TextInputEditText
     private lateinit var etBaseUrl: TextInputEditText
     private lateinit var etModelName: TextInputEditText
+    private lateinit var tilApiKey: TextInputLayout
     private lateinit var switchNotifications: SwitchMaterial
     private lateinit var switchMemoryAware: SwitchMaterial
     private lateinit var switchDevMode: SwitchMaterial
     private lateinit var tvCurrentTheme: TextView
+    private lateinit var tvCurrentProvider: TextView
+    
+    private lateinit var currentProvider: ProviderType
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -49,22 +55,24 @@ class SettingsActivity : AppCompatActivity() {
         skillRegistry = app.skillRegistry
 
         // Bind views
-        findViewById<android.view.View>(R.id.btn_back).setOnClickListener { finish() }
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         
         etApiKey = findViewById(R.id.et_api_key)
         etBaseUrl = findViewById(R.id.et_base_url)
         etModelName = findViewById(R.id.et_model_name)
+        tilApiKey = findViewById(R.id.til_api_key)
         switchNotifications = findViewById(R.id.switch_notifications)
         switchMemoryAware = findViewById(R.id.switch_memory_aware)
         switchDevMode = findViewById(R.id.switch_dev_mode)
-        findViewById<android.view.View>(R.id.btn_manage_skills).setOnClickListener {
+        findViewById<View>(R.id.btn_manage_skills).setOnClickListener {
             startActivity(Intent(this, SkillListActivity::class.java))
         }
 
         // Load current values
-        etApiKey.setText(settingsRepository.ollamaApiKey)
-        etBaseUrl.setText(settingsRepository.ollamaBaseUrl)
-        etModelName.setText(settingsRepository.modelName)
+        currentProvider = settingsRepository.activeProvider
+        tvCurrentProvider = findViewById(R.id.tv_current_provider)
+        loadProviderSettings(currentProvider)
+        
         switchNotifications.isChecked = settingsRepository.isNotificationReadingEnabled
         switchMemoryAware.isChecked = settingsRepository.isMemoryAware
         switchDevMode.isChecked = settingsRepository.isDeveloperMode
@@ -72,8 +80,12 @@ class SettingsActivity : AppCompatActivity() {
         tvCurrentTheme = findViewById(R.id.tv_current_theme)
         updateThemeSummary()
 
-        findViewById<android.view.View>(R.id.btn_manage_theme).setOnClickListener {
+        findViewById<View>(R.id.btn_manage_theme).setOnClickListener {
             showThemeSelectionDialog()
+        }
+        
+        findViewById<View>(R.id.btn_manage_provider).setOnClickListener {
+            showProviderSelectionDialog()
         }
 
         // Dynamic Header and Skill Visibility based on Dev Mode
@@ -109,10 +121,24 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "Base URL must start with http:// or https://", Toast.LENGTH_SHORT).show()
             return
         }
+        
+        val apiKey = etApiKey.text?.toString()?.trim() ?: ""
+        val model = etModelName.text?.toString()?.trim() ?: ""
 
-        settingsRepository.ollamaApiKey = etApiKey.text?.toString()?.trim() ?: ""
-        settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_BASE_URL }
-        settingsRepository.modelName = etModelName.text?.toString()?.trim()?.ifEmpty { SettingsRepository.DEFAULT_MODEL } ?: SettingsRepository.DEFAULT_MODEL
+        when (currentProvider) {
+            ProviderType.OLLAMA -> {
+                settingsRepository.ollamaApiKey = apiKey
+                settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_BASE_URL }
+                settingsRepository.ollamaModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_MODEL }
+            }
+            ProviderType.OPENROUTER -> {
+                settingsRepository.openRouterApiKey = apiKey
+                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_BASE_URL }
+                settingsRepository.openRouterModel = model.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_MODEL }
+            }
+        }
+        
+        settingsRepository.activeProvider = currentProvider
         settingsRepository.isNotificationReadingEnabled = switchNotifications.isChecked
         settingsRepository.isMemoryAware = switchMemoryAware.isChecked
         settingsRepository.isDeveloperMode = switchDevMode.isChecked
@@ -124,6 +150,66 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateThemeSummary() {
         val themeNames = arrayOf("System Default", "Light Mode", "Dark Mode")
         tvCurrentTheme.text = themeNames[settingsRepository.themeMode]
+    }
+
+    private fun loadProviderSettings(provider: ProviderType) {
+        currentProvider = provider
+        when (provider) {
+            ProviderType.OLLAMA -> {
+                tvCurrentProvider.text = "Ollama API"
+                tilApiKey.hint = "Ollama API Key"
+                etApiKey.setText(settingsRepository.ollamaApiKey)
+                etBaseUrl.setText(settingsRepository.ollamaBaseUrl)
+                etModelName.setText(settingsRepository.ollamaModel)
+            }
+            ProviderType.OPENROUTER -> {
+                tvCurrentProvider.text = "OpenRouter API"
+                tilApiKey.hint = "OpenRouter API Key"
+                etApiKey.setText(settingsRepository.openRouterApiKey)
+                etBaseUrl.setText(settingsRepository.openRouterBaseUrl)
+                etModelName.setText(settingsRepository.openRouterModel)
+            }
+        }
+    }
+
+    private fun showProviderSelectionDialog() {
+        val options = arrayOf("Ollama API", "OpenRouter API")
+        val current = if (currentProvider == ProviderType.OLLAMA) 0 else 1
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Select LLM Provider")
+            .setSingleChoiceItems(options, current) { dialog, which ->
+                val selectedProvider = if (which == 0) ProviderType.OLLAMA else ProviderType.OPENROUTER
+                
+                // If they changed it, save the current fields to the old provider before switching
+                if (selectedProvider != currentProvider) {
+                    saveSettingsSilent() 
+                }
+                
+                loadProviderSettings(selectedProvider)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun saveSettingsSilent() {
+        val baseUrl = etBaseUrl.text?.toString()?.trim() ?: ""
+        val apiKey = etApiKey.text?.toString()?.trim() ?: ""
+        val model = etModelName.text?.toString()?.trim() ?: ""
+
+        when (currentProvider) {
+            ProviderType.OLLAMA -> {
+                settingsRepository.ollamaApiKey = apiKey
+                settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_BASE_URL }
+                settingsRepository.ollamaModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_MODEL }
+            }
+            ProviderType.OPENROUTER -> {
+                settingsRepository.openRouterApiKey = apiKey
+                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_BASE_URL }
+                settingsRepository.openRouterModel = model.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_MODEL }
+            }
+        }
     }
 
     private fun showThemeSelectionDialog() {

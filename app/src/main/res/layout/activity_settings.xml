@@ -104,6 +104,73 @@
                     android:layout_height="16dp"
                     android:src="@android:drawable/ic_media_play"
                     app:tint="@color/text_muted" />
+        </LinearLayout>
+        </LinearLayout>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PROVIDER SELECTION"
+            android:textColor="@color/text_muted"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="16dp"
+            android:layout_marginStart="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_premium_card"
+            android:padding="8dp"
+            android:layout_marginBottom="32dp">
+
+            <LinearLayout
+                android:id="@+id/btn_manage_provider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    app:tint="@color/text_muted" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Active LLM Provider"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/tv_current_provider"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ollama API"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/ic_media_play"
+                    app:tint="@color/text_muted" />
             </LinearLayout>
         </LinearLayout>
         <TextView
@@ -139,9 +206,10 @@
                     app:tint="@color/text_muted" />
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_api_key"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Ollama API Key"
+                    android:hint="API Key"
                     android:layout_marginStart="12dp"
                     app:hintTextColor="@color/accent_cobalt"
                     style="@style/Theme.MindFrame.TextInput">

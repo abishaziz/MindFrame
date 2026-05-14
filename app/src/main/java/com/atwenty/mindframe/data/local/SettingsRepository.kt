@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.atwenty.mindframe.domain.model.ProviderType
 
 class SettingsRepository(private val context: Context) {
 
@@ -27,20 +28,40 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    // --- API Key (Encrypted) ---
+    // --- Provider Selection ---
+    var activeProvider: ProviderType
+        get() {
+            val name = prefs.getString(KEY_ACTIVE_PROVIDER, ProviderType.OLLAMA.name) ?: ProviderType.OLLAMA.name
+            return try { ProviderType.valueOf(name) } catch (e: Exception) { ProviderType.OLLAMA }
+        }
+        set(value) = prefs.edit().putString(KEY_ACTIVE_PROVIDER, value.name).apply()
+
+    // --- API Keys (Encrypted) ---
     var ollamaApiKey: String
         get() = securePrefs.getString(KEY_OLLAMA_API_KEY, "") ?: ""
         set(value) = securePrefs.edit().putString(KEY_OLLAMA_API_KEY, value).apply()
 
-    // --- Model Name ---
-    var modelName: String
-        get() = prefs.getString(KEY_MODEL_NAME, DEFAULT_MODEL) ?: DEFAULT_MODEL
-        set(value) = prefs.edit().putString(KEY_MODEL_NAME, value).apply()
+    var openRouterApiKey: String
+        get() = securePrefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
+        set(value) = securePrefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
 
-    // --- Ollama Base URL ---
+    // --- Model Names ---
+    var ollamaModel: String
+        get() = prefs.getString(KEY_OLLAMA_MODEL, DEFAULT_OLLAMA_MODEL) ?: DEFAULT_OLLAMA_MODEL
+        set(value) = prefs.edit().putString(KEY_OLLAMA_MODEL, value).apply()
+
+    var openRouterModel: String
+        get() = prefs.getString(KEY_OPENROUTER_MODEL, DEFAULT_OPENROUTER_MODEL) ?: DEFAULT_OPENROUTER_MODEL
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_MODEL, value).apply()
+
+    // --- Base URLs ---
     var ollamaBaseUrl: String
-        get() = prefs.getString(KEY_BASE_URL, DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
-        set(value) = prefs.edit().putString(KEY_BASE_URL, value).apply()
+        get() = prefs.getString(KEY_OLLAMA_BASE_URL, DEFAULT_OLLAMA_BASE_URL) ?: DEFAULT_OLLAMA_BASE_URL
+        set(value) = prefs.edit().putString(KEY_OLLAMA_BASE_URL, value).apply()
+
+    var openRouterBaseUrl: String
+        get() = prefs.getString(KEY_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_BASE_URL) ?: DEFAULT_OPENROUTER_BASE_URL
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
 
     // --- Notification Reading Toggle ---
     var isNotificationReadingEnabled: Boolean
@@ -85,9 +106,13 @@ class SettingsRepository(private val context: Context) {
     }
 
     companion object {
+        private const val KEY_ACTIVE_PROVIDER = "active_provider"
         private const val KEY_OLLAMA_API_KEY = "ollama_api_key"
-        private const val KEY_MODEL_NAME = "model_name"
-        private const val KEY_BASE_URL = "ollama_base_url"
+        private const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
+        private const val KEY_OLLAMA_MODEL = "ollama_model"
+        private const val KEY_OPENROUTER_MODEL = "openrouter_model"
+        private const val KEY_OLLAMA_BASE_URL = "ollama_base_url"
+        private const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
         private const val KEY_NOTIFICATION_READING = "notification_reading"
         private const val KEY_DEVELOPER_MODE = "developer_mode"
         private const val KEY_MEMORY_AWARE = "memory_aware"
@@ -95,8 +120,11 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_BLACKLIST = "privacy_blacklist"
         private const val KEY_THEME_MODE = "theme_mode"
 
-        const val DEFAULT_MODEL = "gemma4:31b-cloud"
-        const val DEFAULT_BASE_URL = "https://ollama.com"
+        const val DEFAULT_OLLAMA_MODEL = "gemma4:31b-cloud"
+        const val DEFAULT_OLLAMA_BASE_URL = "https://ollama.com"
+        
+        const val DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
+        const val DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
         val DEFAULT_BLACKLIST = setOf(
             "com.google.android.apps.nbu.paisa.user", // Google Pay
