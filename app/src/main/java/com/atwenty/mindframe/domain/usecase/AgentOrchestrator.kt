@@ -2,7 +2,6 @@ package com.atwenty.mindframe.domain.usecase
 
 import android.content.Context
 import android.util.Log
-import com.atwenty.mindframe.data.remote.OllamaCloudProvider
 import com.atwenty.mindframe.domain.model.*
 import com.atwenty.mindframe.service.accessibility.AccessibilityDriver
 import com.atwenty.mindframe.service.accessibility.MindFrameAccessibilityService

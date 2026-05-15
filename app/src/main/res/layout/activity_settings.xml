@@ -161,7 +161,7 @@
                         android:id="@+id/tv_current_provider"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ollama API"
+                        android:text="Ollama Cloud API"
                         android:textColor="@color/text_muted"
                         android:textSize="11sp" />
                 </LinearLayout>

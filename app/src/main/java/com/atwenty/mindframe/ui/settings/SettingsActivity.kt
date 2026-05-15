@@ -126,10 +126,10 @@ class SettingsActivity : AppCompatActivity() {
         val model = etModelName.text?.toString()?.trim() ?: ""
 
         when (currentProvider) {
-            ProviderType.OLLAMA -> {
-                settingsRepository.ollamaApiKey = apiKey
-                settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_BASE_URL }
-                settingsRepository.ollamaModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_MODEL }
+            ProviderType.OLLAMA_CLOUD -> {
+                settingsRepository.ollamaCloudApiKey = apiKey
+                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_BASE_URL }
+                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_MODEL }
             }
             ProviderType.OPENROUTER -> {
                 settingsRepository.openRouterApiKey = apiKey
@@ -155,12 +155,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadProviderSettings(provider: ProviderType) {
         currentProvider = provider
         when (provider) {
-            ProviderType.OLLAMA -> {
-                tvCurrentProvider.text = "Ollama API"
-                tilApiKey.hint = "Ollama API Key"
-                etApiKey.setText(settingsRepository.ollamaApiKey)
-                etBaseUrl.setText(settingsRepository.ollamaBaseUrl)
-                etModelName.setText(settingsRepository.ollamaModel)
+            ProviderType.OLLAMA_CLOUD -> {
+                tvCurrentProvider.text = "Ollama Cloud API"
+                tilApiKey.hint = "Ollama Cloud API Key"
+                etApiKey.setText(settingsRepository.ollamaCloudApiKey)
+                etBaseUrl.setText(settingsRepository.ollamaCloudBaseUrl)
+                etModelName.setText(settingsRepository.ollamaCloudModel)
             }
             ProviderType.OPENROUTER -> {
                 tvCurrentProvider.text = "OpenRouter API"
@@ -173,13 +173,13 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showProviderSelectionDialog() {
-        val options = arrayOf("Ollama API", "OpenRouter API")
-        val current = if (currentProvider == ProviderType.OLLAMA) 0 else 1
+        val options = arrayOf("Ollama Cloud API", "OpenRouter API")
+        val current = if (currentProvider == ProviderType.OLLAMA_CLOUD) 0 else 1
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Select LLM Provider")
             .setSingleChoiceItems(options, current) { dialog, which ->
-                val selectedProvider = if (which == 0) ProviderType.OLLAMA else ProviderType.OPENROUTER
+                val selectedProvider = if (which == 0) ProviderType.OLLAMA_CLOUD else ProviderType.OPENROUTER
                 
                 // If they changed it, save the current fields to the old provider before switching
                 if (selectedProvider != currentProvider) {
@@ -199,10 +199,10 @@ class SettingsActivity : AppCompatActivity() {
         val model = etModelName.text?.toString()?.trim() ?: ""
 
         when (currentProvider) {
-            ProviderType.OLLAMA -> {
-                settingsRepository.ollamaApiKey = apiKey
-                settingsRepository.ollamaBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_BASE_URL }
-                settingsRepository.ollamaModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_MODEL }
+            ProviderType.OLLAMA_CLOUD -> {
+                settingsRepository.ollamaCloudApiKey = apiKey
+                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_BASE_URL }
+                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_MODEL }
             }
             ProviderType.OPENROUTER -> {
                 settingsRepository.openRouterApiKey = apiKey
