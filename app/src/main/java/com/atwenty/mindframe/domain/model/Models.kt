@@ -3,7 +3,7 @@ package com.atwenty.mindframe.domain.model
 
 // --- Generic Agent Models (API Agnostic) ---
 
-enum class ProviderType { OLLAMA, OPENROUTER }
+enum class ProviderType { OLLAMA_CLOUD, OPENROUTER }
 
 data class AgentMessage(
     val role: String,

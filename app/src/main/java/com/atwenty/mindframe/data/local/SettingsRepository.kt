@@ -31,33 +31,33 @@ class SettingsRepository(private val context: Context) {
     // --- Provider Selection ---
     var activeProvider: ProviderType
         get() {
-            val name = prefs.getString(KEY_ACTIVE_PROVIDER, ProviderType.OLLAMA.name) ?: ProviderType.OLLAMA.name
-            return try { ProviderType.valueOf(name) } catch (e: Exception) { ProviderType.OLLAMA }
+            val name = prefs.getString(KEY_ACTIVE_PROVIDER, ProviderType.OLLAMA_CLOUD.name) ?: ProviderType.OLLAMA_CLOUD.name
+            return try { ProviderType.valueOf(name) } catch (e: Exception) { ProviderType.OLLAMA_CLOUD }
         }
         set(value) = prefs.edit().putString(KEY_ACTIVE_PROVIDER, value.name).apply()
 
     // --- API Keys (Encrypted) ---
-    var ollamaApiKey: String
-        get() = securePrefs.getString(KEY_OLLAMA_API_KEY, "") ?: ""
-        set(value) = securePrefs.edit().putString(KEY_OLLAMA_API_KEY, value).apply()
+    var ollamaCloudApiKey: String
+        get() = securePrefs.getString(KEY_OLLAMA_CLOUD_API_KEY, "") ?: ""
+        set(value) = securePrefs.edit().putString(KEY_OLLAMA_CLOUD_API_KEY, value).apply()
 
     var openRouterApiKey: String
         get() = securePrefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
         set(value) = securePrefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
 
     // --- Model Names ---
-    var ollamaModel: String
-        get() = prefs.getString(KEY_OLLAMA_MODEL, DEFAULT_OLLAMA_MODEL) ?: DEFAULT_OLLAMA_MODEL
-        set(value) = prefs.edit().putString(KEY_OLLAMA_MODEL, value).apply()
+    var ollamaCloudModel: String
+        get() = prefs.getString(KEY_OLLAMA_CLOUD_MODEL, DEFAULT_OLLAMA_CLOUD_MODEL) ?: DEFAULT_OLLAMA_CLOUD_MODEL
+        set(value) = prefs.edit().putString(KEY_OLLAMA_CLOUD_MODEL, value).apply()
 
     var openRouterModel: String
         get() = prefs.getString(KEY_OPENROUTER_MODEL, DEFAULT_OPENROUTER_MODEL) ?: DEFAULT_OPENROUTER_MODEL
         set(value) = prefs.edit().putString(KEY_OPENROUTER_MODEL, value).apply()
 
     // --- Base URLs ---
-    var ollamaBaseUrl: String
-        get() = prefs.getString(KEY_OLLAMA_BASE_URL, DEFAULT_OLLAMA_BASE_URL) ?: DEFAULT_OLLAMA_BASE_URL
-        set(value) = prefs.edit().putString(KEY_OLLAMA_BASE_URL, value).apply()
+    var ollamaCloudBaseUrl: String
+        get() = prefs.getString(KEY_OLLAMA_CLOUD_BASE_URL, DEFAULT_OLLAMA_CLOUD_BASE_URL) ?: DEFAULT_OLLAMA_CLOUD_BASE_URL
+        set(value) = prefs.edit().putString(KEY_OLLAMA_CLOUD_BASE_URL, value).apply()
 
     var openRouterBaseUrl: String
         get() = prefs.getString(KEY_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_BASE_URL) ?: DEFAULT_OPENROUTER_BASE_URL
@@ -107,11 +107,11 @@ class SettingsRepository(private val context: Context) {
 
     companion object {
         private const val KEY_ACTIVE_PROVIDER = "active_provider"
-        private const val KEY_OLLAMA_API_KEY = "ollama_api_key"
+        private const val KEY_OLLAMA_CLOUD_API_KEY = "ollama_cloud_api_key"
         private const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
-        private const val KEY_OLLAMA_MODEL = "ollama_model"
+        private const val KEY_OLLAMA_CLOUD_MODEL = "ollama_cloud_model"
         private const val KEY_OPENROUTER_MODEL = "openrouter_model"
-        private const val KEY_OLLAMA_BASE_URL = "ollama_base_url"
+        private const val KEY_OLLAMA_CLOUD_BASE_URL = "ollama_cloud_base_url"
         private const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
         private const val KEY_NOTIFICATION_READING = "notification_reading"
         private const val KEY_DEVELOPER_MODE = "developer_mode"
@@ -120,8 +120,8 @@ class SettingsRepository(private val context: Context) {
         private const val KEY_BLACKLIST = "privacy_blacklist"
         private const val KEY_THEME_MODE = "theme_mode"
 
-        const val DEFAULT_OLLAMA_MODEL = "gemma4:31b-cloud"
-        const val DEFAULT_OLLAMA_BASE_URL = "https://ollama.com"
+        const val DEFAULT_OLLAMA_CLOUD_MODEL = "gemma4:31b-cloud"
+        const val DEFAULT_OLLAMA_CLOUD_BASE_URL = "https://ollama.com"
         
         const val DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
         const val DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"

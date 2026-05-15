@@ -1,58 +1,58 @@
-package com.atwenty.mindframe.data.remote
+package com.atwenty.mindframe.llm.ollamacloud
 
 import com.google.gson.annotations.SerializedName
 
-// --- Ollama API Request/Response Models ---
+// --- Ollama Cloud API Request/Response DTOs ---
 
-data class OllamaRequest(
+data class Request(
     val model: String,
-    val messages: List<OllamaMessage>,
-    val tools: List<OllamaTool>? = null,
+    val messages: List<Message>,
+    val tools: List<Tool>? = null,
     val stream: Boolean = false
 )
 
-data class OllamaMessage(
+data class Message(
     val role: String,
     val content: String = "",
     val images: List<String>? = null, // Base64 encoded images for vision
-    @SerializedName("tool_calls") val toolCalls: List<OllamaToolCall>? = null
+    @SerializedName("tool_calls") val toolCalls: List<ToolCall>? = null
 )
 
-data class OllamaTool(
+data class Tool(
     val type: String = "function",
-    val function: OllamaFunction
+    val function: ToolFunction
 )
 
-data class OllamaFunction(
+data class ToolFunction(
     val name: String,
     val description: String,
-    val parameters: OllamaParameters
+    val parameters: ToolParameters
 )
 
-data class OllamaParameters(
+data class ToolParameters(
     val type: String = "object",
-    val properties: Map<String, OllamaProperty> = emptyMap(),
+    val properties: Map<String, ToolProperty> = emptyMap(),
     val required: List<String> = emptyList()
 )
 
-data class OllamaProperty(
+data class ToolProperty(
     val type: String,
     val description: String,
     @SerializedName("enum") val enumValues: List<String>? = null
 )
 
-data class OllamaToolCall(
-    val function: OllamaToolCallFunction
+data class ToolCall(
+    val function: ToolCallFunction
 )
 
-data class OllamaToolCallFunction(
+data class ToolCallFunction(
     val name: String,
     val arguments: Map<String, com.google.gson.JsonElement> = emptyMap()
 )
 
-data class OllamaResponse(
+data class Response(
     val model: String? = null,
-    val message: OllamaMessage? = null,
+    val message: Message? = null,
     val done: Boolean = false,
     @SerializedName("done_reason") val doneReason: String? = null,
     val error: String? = null
