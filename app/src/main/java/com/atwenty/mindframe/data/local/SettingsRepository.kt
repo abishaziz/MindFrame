@@ -5,18 +5,20 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.atwenty.mindframe.domain.entities.ProviderType
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 class SettingsRepository(private val context: Context) {
 
     private val prefs: SharedPreferences by lazy {
-        context.getSharedPreferences("mindframe_prefs", Context.MODE_PRIVATE)
+        context.getSharedPreferences(SettingsConstants.PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     private val securePrefs: SharedPreferences by lazy {
         try {
             val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
             EncryptedSharedPreferences.create(
-                "mindframe_secure_prefs",
+                SettingsConstants.SECURE_PREFS_NAME,
                 masterKeyAlias,
                 context,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
@@ -28,70 +30,66 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    // --- Provider Selection ---
-    var activeProvider: ProviderType
-        get() {
-            val name = prefs.getString(KEY_ACTIVE_PROVIDER, ProviderType.OLLAMA_CLOUD.name) ?: ProviderType.OLLAMA_CLOUD.name
-            return try { ProviderType.valueOf(name) } catch (e: Exception) { ProviderType.OLLAMA_CLOUD }
+    // --- Property Delegates ---
+
+    private fun stringPref(key: String, defaultValue: String) = object : ReadWriteProperty<Any?, String> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): String = prefs.getString(key, defaultValue) ?: defaultValue
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) = prefs.edit().putString(key, value).apply()
+    }
+
+    private fun secureStringPref(key: String, defaultValue: String) = object : ReadWriteProperty<Any?, String> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): String = securePrefs.getString(key, defaultValue) ?: defaultValue
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) = securePrefs.edit().putString(key, value).apply()
+    }
+
+    private fun booleanPref(key: String, defaultValue: Boolean) = object : ReadWriteProperty<Any?, Boolean> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Boolean = prefs.getBoolean(key, defaultValue)
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) = prefs.edit().putBoolean(key, value).apply()
+    }
+
+    private fun intPref(key: String, defaultValue: Int) = object : ReadWriteProperty<Any?, Int> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Int = prefs.getInt(key, defaultValue)
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) = prefs.edit().putInt(key, value).apply()
+    }
+
+    private fun stringSetPref(key: String, defaultValue: Set<String>) = object : ReadWriteProperty<Any?, Set<String>> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Set<String> = prefs.getStringSet(key, defaultValue) ?: defaultValue
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Set<String>) = prefs.edit().putStringSet(key, value).apply()
+    }
+
+    private fun providerTypePref(key: String, defaultValue: ProviderType) = object : ReadWriteProperty<Any?, ProviderType> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): ProviderType {
+            val name = prefs.getString(key, defaultValue.name) ?: defaultValue.name
+            return try { ProviderType.valueOf(name) } catch (e: Exception) { defaultValue }
         }
-        set(value) = prefs.edit().putString(KEY_ACTIVE_PROVIDER, value.name).apply()
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: ProviderType) {
+            prefs.edit().putString(key, value.name).apply()
+        }
+    }
 
-    // --- API Keys (Encrypted) ---
-    var ollamaCloudApiKey: String
-        get() = securePrefs.getString(KEY_OLLAMA_CLOUD_API_KEY, "") ?: ""
-        set(value) = securePrefs.edit().putString(KEY_OLLAMA_CLOUD_API_KEY, value).apply()
+    // --- Properties ---
 
-    var openRouterApiKey: String
-        get() = securePrefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
-        set(value) = securePrefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
+    var activeProvider by providerTypePref(SettingsConstants.KEY_ACTIVE_PROVIDER, ProviderType.OLLAMA_CLOUD)
+    
+    var ollamaCloudApiKey by secureStringPref(SettingsConstants.KEY_OLLAMA_CLOUD_API_KEY, "")
+    var openRouterApiKey by secureStringPref(SettingsConstants.KEY_OPENROUTER_API_KEY, "")
+    
+    var ollamaCloudModel by stringPref(SettingsConstants.KEY_OLLAMA_CLOUD_MODEL, SettingsConstants.DEFAULT_OLLAMA_CLOUD_MODEL)
+    var openRouterModel by stringPref(SettingsConstants.KEY_OPENROUTER_MODEL, SettingsConstants.DEFAULT_OPENROUTER_MODEL)
+    
+    var ollamaCloudBaseUrl by stringPref(SettingsConstants.KEY_OLLAMA_CLOUD_BASE_URL, SettingsConstants.DEFAULT_OLLAMA_CLOUD_BASE_URL)
+    var openRouterBaseUrl by stringPref(SettingsConstants.KEY_OPENROUTER_BASE_URL, SettingsConstants.DEFAULT_OPENROUTER_BASE_URL)
+    
+    var isNotificationReadingEnabled by booleanPref(SettingsConstants.KEY_NOTIFICATION_READING, false)
+    var isDeveloperMode by booleanPref(SettingsConstants.KEY_DEVELOPER_MODE, false)
+    var isMemoryAware by booleanPref(SettingsConstants.KEY_MEMORY_AWARE, true)
+    var isFirstLaunch by booleanPref(SettingsConstants.KEY_FIRST_LAUNCH, true)
+    
+    var themeMode by intPref(SettingsConstants.KEY_THEME_MODE, 0)
+    
+    var blacklistedPackages by stringSetPref(SettingsConstants.KEY_BLACKLIST, SettingsConstants.DEFAULT_BLACKLIST)
 
-    // --- Model Names ---
-    var ollamaCloudModel: String
-        get() = prefs.getString(KEY_OLLAMA_CLOUD_MODEL, DEFAULT_OLLAMA_CLOUD_MODEL) ?: DEFAULT_OLLAMA_CLOUD_MODEL
-        set(value) = prefs.edit().putString(KEY_OLLAMA_CLOUD_MODEL, value).apply()
-
-    var openRouterModel: String
-        get() = prefs.getString(KEY_OPENROUTER_MODEL, DEFAULT_OPENROUTER_MODEL) ?: DEFAULT_OPENROUTER_MODEL
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_MODEL, value).apply()
-
-    // --- Base URLs ---
-    var ollamaCloudBaseUrl: String
-        get() = prefs.getString(KEY_OLLAMA_CLOUD_BASE_URL, DEFAULT_OLLAMA_CLOUD_BASE_URL) ?: DEFAULT_OLLAMA_CLOUD_BASE_URL
-        set(value) = prefs.edit().putString(KEY_OLLAMA_CLOUD_BASE_URL, value).apply()
-
-    var openRouterBaseUrl: String
-        get() = prefs.getString(KEY_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_BASE_URL) ?: DEFAULT_OPENROUTER_BASE_URL
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
-
-    // --- Notification Reading Toggle ---
-    var isNotificationReadingEnabled: Boolean
-        get() = prefs.getBoolean(KEY_NOTIFICATION_READING, false)
-        set(value) = prefs.edit().putBoolean(KEY_NOTIFICATION_READING, value).apply()
-
-    // --- Developer Mode ---
-    var isDeveloperMode: Boolean
-        get() = prefs.getBoolean(KEY_DEVELOPER_MODE, false)
-        set(value) = prefs.edit().putBoolean(KEY_DEVELOPER_MODE, value).apply()
-
-    // --- Memory Awareness (Multi-Turn) ---
-    var isMemoryAware: Boolean
-        get() = prefs.getBoolean(KEY_MEMORY_AWARE, true) // Default to true
-        set(value) = prefs.edit().putBoolean(KEY_MEMORY_AWARE, value).apply()
-
-    // --- First Launch ---
-    var isFirstLaunch: Boolean
-        get() = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
-        set(value) = prefs.edit().putBoolean(KEY_FIRST_LAUNCH, value).apply()
-
-    // --- Theme Mode (0: System, 1: Light, 2: Dark) ---
-    var themeMode: Int
-        get() = prefs.getInt(KEY_THEME_MODE, 0)
-        set(value) = prefs.edit().putInt(KEY_THEME_MODE, value).apply()
-
-    // --- Privacy Blacklist ---
-    var blacklistedPackages: Set<String>
-        get() = prefs.getStringSet(KEY_BLACKLIST, DEFAULT_BLACKLIST) ?: DEFAULT_BLACKLIST
-        set(value) = prefs.edit().putStringSet(KEY_BLACKLIST, value).apply()
+    // --- Blacklist Helpers ---
 
     fun addBlacklistedPackage(packageName: String) {
         blacklistedPackages = blacklistedPackages + packageName
@@ -103,37 +101,5 @@ class SettingsRepository(private val context: Context) {
 
     fun isPackageBlacklisted(packageName: String): Boolean {
         return packageName in blacklistedPackages
-    }
-
-    companion object {
-        private const val KEY_ACTIVE_PROVIDER = "active_provider"
-        private const val KEY_OLLAMA_CLOUD_API_KEY = "ollama_cloud_api_key"
-        private const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
-        private const val KEY_OLLAMA_CLOUD_MODEL = "ollama_cloud_model"
-        private const val KEY_OPENROUTER_MODEL = "openrouter_model"
-        private const val KEY_OLLAMA_CLOUD_BASE_URL = "ollama_cloud_base_url"
-        private const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
-        private const val KEY_NOTIFICATION_READING = "notification_reading"
-        private const val KEY_DEVELOPER_MODE = "developer_mode"
-        private const val KEY_MEMORY_AWARE = "memory_aware"
-        private const val KEY_FIRST_LAUNCH = "first_launch"
-        private const val KEY_BLACKLIST = "privacy_blacklist"
-        private const val KEY_THEME_MODE = "theme_mode"
-
-        const val DEFAULT_OLLAMA_CLOUD_MODEL = "gemma4:31b-cloud"
-        const val DEFAULT_OLLAMA_CLOUD_BASE_URL = "https://ollama.com"
-        
-        const val DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
-        const val DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-
-        val DEFAULT_BLACKLIST = setOf(
-            "com.google.android.apps.nbu.paisa.user", // Google Pay
-            "net.one97.paytm",                        // Paytm
-            "com.phonepe.app",                        // PhonePe
-            "com.csam.icici.bank.imobile",             // ICICI
-            "com.sbi.lotusintouch",                    // SBI
-            "com.axis.mobile",                         // Axis Bank
-            "com.msf.kbank.mobile",                    // Kotak
-        )
     }
 }
