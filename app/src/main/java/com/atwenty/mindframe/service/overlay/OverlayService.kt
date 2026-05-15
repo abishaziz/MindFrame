@@ -23,8 +23,8 @@ import androidx.core.app.NotificationCompat
 import com.atwenty.mindframe.MainActivity
 import com.atwenty.mindframe.MindFrameApp
 import com.atwenty.mindframe.R
-import com.atwenty.mindframe.domain.model.AgentStatus
-import com.atwenty.mindframe.domain.model.SkillType
+import com.atwenty.mindframe.domain.entities.AgentStatus
+import com.atwenty.mindframe.domain.entities.SkillType
 import com.atwenty.mindframe.domain.usecase.AgentOrchestrator
 import com.atwenty.mindframe.skills.SkillGenerator
 import com.atwenty.mindframe.ui.settings.SettingsActivity
@@ -609,7 +609,7 @@ class OverlayService : Service() {
             serviceScope.launch(Dispatchers.IO) {
                 try {
                     val generator = SkillGenerator(
-                        { (application as MindFrameApp).modelProvider },
+                        { (application as MindFrameApp).LlmProvider },
                         (application as MindFrameApp).skillRegistry
                     )
                     generator.generateFromSession(sessionLog)

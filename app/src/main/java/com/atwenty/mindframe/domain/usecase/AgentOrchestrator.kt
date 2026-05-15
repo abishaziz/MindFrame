@@ -2,7 +2,7 @@ package com.atwenty.mindframe.domain.usecase
 
 import android.content.Context
 import android.util.Log
-import com.atwenty.mindframe.domain.model.*
+import com.atwenty.mindframe.domain.entities.*
 import com.atwenty.mindframe.service.accessibility.AccessibilityDriver
 import com.atwenty.mindframe.service.accessibility.MindFrameAccessibilityService
 import com.atwenty.mindframe.skills.registry.SkillRegistry
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class AgentOrchestrator(
-    private val providerFactory: () -> ModelProvider,
+    private val providerFactory: () -> LlmProvider,
     private val skillRegistry: SkillRegistry,
     private val skillGenerator: com.atwenty.mindframe.skills.SkillGenerator,
     private val settingsRepository: com.atwenty.mindframe.data.local.SettingsRepository

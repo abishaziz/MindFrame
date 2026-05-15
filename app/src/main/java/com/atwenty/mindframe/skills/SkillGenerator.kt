@@ -1,16 +1,16 @@
 package com.atwenty.mindframe.skills
 
 import android.util.Log
-import com.atwenty.mindframe.domain.model.AgentMessage
-import com.atwenty.mindframe.domain.model.ModelProvider
-import com.atwenty.mindframe.domain.model.SessionLog
+import com.atwenty.mindframe.domain.entities.AgentMessage
+import com.atwenty.mindframe.domain.entities.LlmProvider
+import com.atwenty.mindframe.domain.entities.SessionLog
 import com.atwenty.mindframe.skills.registry.SkillRegistry
 
 /**
  * Generates SKILL.md files from successful session logs using the LLM.
  */
 class SkillGenerator(
-    private val providerFactory: () -> ModelProvider,
+    private val providerFactory: () -> LlmProvider,
     private val skillRegistry: SkillRegistry
 ) {
     companion object {

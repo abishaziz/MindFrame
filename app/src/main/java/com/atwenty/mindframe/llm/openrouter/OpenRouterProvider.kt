@@ -3,7 +3,7 @@ package com.atwenty.mindframe.llm.openrouter
 import android.util.Log
 import com.atwenty.mindframe.data.local.SettingsRepository
 import com.atwenty.mindframe.llm.BaseLlmProvider
-import com.atwenty.mindframe.domain.model.*
+import com.atwenty.mindframe.domain.entities.*
 import com.google.gson.reflect.TypeToken
 
 import okhttp3.MediaType.Companion.toMediaType

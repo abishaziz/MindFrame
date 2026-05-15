@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
-import com.atwenty.mindframe.domain.model.ProviderType
+import com.atwenty.mindframe.domain.entities.ProviderType
 
 class SettingsRepository(private val context: Context) {
 

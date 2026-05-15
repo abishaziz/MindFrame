@@ -5,10 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.AlarmClock
 import android.util.Log
-import com.atwenty.mindframe.domain.model.AgentFunction
-import com.atwenty.mindframe.domain.model.AgentParameters
-import com.atwenty.mindframe.domain.model.AgentProperty
-import com.atwenty.mindframe.domain.model.AgentTool
+import com.atwenty.mindframe.domain.entities.AgentFunction
+import com.atwenty.mindframe.domain.entities.AgentParameters
+import com.atwenty.mindframe.domain.entities.AgentProperty
+import com.atwenty.mindframe.domain.entities.AgentTool
 import com.atwenty.mindframe.service.accessibility.AccessibilityDriver
 import com.google.gson.Gson
 import com.google.gson.JsonObject

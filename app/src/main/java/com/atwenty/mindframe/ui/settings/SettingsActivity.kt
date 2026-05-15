@@ -10,7 +10,7 @@ import com.atwenty.mindframe.R
 import com.atwenty.mindframe.data.local.SettingsRepository
 import com.atwenty.mindframe.skills.registry.SkillRegistry
 import com.atwenty.mindframe.ui.onboarding.PermissionActivity
-import com.atwenty.mindframe.domain.model.ProviderType
+import com.atwenty.mindframe.domain.entities.ProviderType
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
