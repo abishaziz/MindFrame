@@ -2,7 +2,6 @@ package com.atwenty.mindframe.ui.settings
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.atwenty.mindframe.MindFrameApp
@@ -11,6 +10,7 @@ import com.atwenty.mindframe.data.local.SettingsRepository
 import com.atwenty.mindframe.skills.registry.SkillRegistry
 import com.atwenty.mindframe.ui.onboarding.PermissionActivity
 import com.atwenty.mindframe.domain.entities.ProviderType
+import com.atwenty.mindframe.data.local.SettingsConstants
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -128,13 +128,13 @@ class SettingsActivity : AppCompatActivity() {
         when (currentProvider) {
             ProviderType.OLLAMA_CLOUD -> {
                 settingsRepository.ollamaCloudApiKey = apiKey
-                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_BASE_URL }
-                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_MODEL }
+                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsConstants.DEFAULT_OLLAMA_CLOUD_BASE_URL }
+                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsConstants.DEFAULT_OLLAMA_CLOUD_MODEL }
             }
             ProviderType.OPENROUTER -> {
                 settingsRepository.openRouterApiKey = apiKey
-                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_BASE_URL }
-                settingsRepository.openRouterModel = model.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_MODEL }
+                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsConstants.DEFAULT_OPENROUTER_BASE_URL }
+                settingsRepository.openRouterModel = model.ifEmpty { SettingsConstants.DEFAULT_OPENROUTER_MODEL }
             }
         }
         
@@ -201,13 +201,13 @@ class SettingsActivity : AppCompatActivity() {
         when (currentProvider) {
             ProviderType.OLLAMA_CLOUD -> {
                 settingsRepository.ollamaCloudApiKey = apiKey
-                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_BASE_URL }
-                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsRepository.DEFAULT_OLLAMA_CLOUD_MODEL }
+                settingsRepository.ollamaCloudBaseUrl = baseUrl.ifEmpty { SettingsConstants.DEFAULT_OLLAMA_CLOUD_BASE_URL }
+                settingsRepository.ollamaCloudModel = model.ifEmpty { SettingsConstants.DEFAULT_OLLAMA_CLOUD_MODEL }
             }
             ProviderType.OPENROUTER -> {
                 settingsRepository.openRouterApiKey = apiKey
-                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_BASE_URL }
-                settingsRepository.openRouterModel = model.ifEmpty { SettingsRepository.DEFAULT_OPENROUTER_MODEL }
+                settingsRepository.openRouterBaseUrl = baseUrl.ifEmpty { SettingsConstants.DEFAULT_OPENROUTER_BASE_URL }
+                settingsRepository.openRouterModel = model.ifEmpty { SettingsConstants.DEFAULT_OPENROUTER_MODEL }
             }
         }
     }
