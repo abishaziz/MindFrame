@@ -1,7 +1,7 @@
 package com.atwenty.mindframe.llm
 
 import android.util.Log
-import com.atwenty.mindframe.domain.model.*
+import com.atwenty.mindframe.domain.entities.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.delay
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * 1. Build their provider-specific HTTP request (URL, headers, JSON payload).
  * 2. Implement their provider-specific response parsing (converting their JSON to AgentResponse).
  */
-abstract class BaseLlmProvider : ModelProvider {
+abstract class BaseLlmProvider : LlmProvider {
 
     companion object {
         private const val TAG = "MF_BaseLlm"

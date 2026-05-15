@@ -10,7 +10,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.atwenty.mindframe.MindFrameApp
-import com.atwenty.mindframe.domain.model.UiNode
+import com.atwenty.mindframe.domain.entities.UiNode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.ByteArrayOutputStream

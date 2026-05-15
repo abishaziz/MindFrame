@@ -1,6 +1,6 @@
 package com.atwenty.mindframe.service.accessibility
 
-import com.atwenty.mindframe.domain.model.UiNode
+import com.atwenty.mindframe.domain.entities.UiNode
 
 /**
  * High-level contract for interacting with the device UI.
