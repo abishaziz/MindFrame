@@ -83,7 +83,6 @@ class SettingsRepository(private val context: Context) {
     var isNotificationReadingEnabled by booleanPref(SettingsConstants.KEY_NOTIFICATION_READING, false)
     var isDeveloperMode by booleanPref(SettingsConstants.KEY_DEVELOPER_MODE, false)
     var isMemoryAware by booleanPref(SettingsConstants.KEY_MEMORY_AWARE, true)
-    var isFirstLaunch by booleanPref(SettingsConstants.KEY_FIRST_LAUNCH, true)
     
     var themeMode by intPref(SettingsConstants.KEY_THEME_MODE, 0)
     
